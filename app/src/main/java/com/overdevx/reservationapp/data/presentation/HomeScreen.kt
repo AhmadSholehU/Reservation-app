@@ -1,0 +1,215 @@
+package com.overdevx.reservationapp.data.presentation
+
+import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.overdevx.reservationapp.R
+import com.overdevx.reservationapp.data.model.Building
+import com.overdevx.reservationapp.data.model.Room
+import com.overdevx.reservationapp.ui.theme.gray
+import com.overdevx.reservationapp.ui.theme.gray2
+import com.overdevx.reservationapp.ui.theme.primary
+import com.overdevx.reservationapp.ui.theme.secondary
+import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.utils.Resource
+
+@Composable
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    onClick: (Int,String) -> Unit,
+    viewModel: BuildingViewModel = hiltViewModel()
+) {
+    val buildingState by viewModel.buildingState.collectAsState()
+    Column(modifier = modifier.fillMaxSize()) {
+        HeaderSection()
+        Spacer(modifier = Modifier.height(10.dp))
+        when (buildingState) {
+            is Resource.Loading -> {
+                CircularProgressIndicator()
+            }
+
+            is Resource.Success -> {
+                val buildings = (buildingState as Resource.Success<List<Building>>).data
+                if (buildings != null) {
+                    if (buildings.isEmpty()) {
+                        Text(text = "No building available")
+                    } else {
+                        LazyColumn(
+                            modifier = modifier
+                                .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
+                                .background(white)
+                                .padding(10.dp)
+                        ) {
+                            items(buildings) { building ->
+                                BuildingItem(
+                                    onClick = { onClick(building.building_id,building.name) },
+                                    building = building
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            is Resource.ErrorMessage -> {
+                val errorMessage = (buildingState as Resource.ErrorMessage).message
+                Text(text = "Error: $errorMessage")
+                Log.e("HomeScreen", "Error: $errorMessage")
+            }
+
+            else -> {}
+        }
+
+    }
+}
+
+@Composable
+fun HeaderSection(modifier: Modifier = Modifier) {
+    Row(modifier = modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.img_smg),
+            contentDescription = "Logo",
+            modifier = Modifier
+                .size(90.dp)
+                .align(Alignment.CenterVertically)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+            Text(
+                text = "ASRAMA BALAI DIKLAT",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 20.sp,
+                color = secondary,
+                letterSpacing = 3.sp,
+                modifier = Modifier
+            )
+            Text(
+                text = "Kota Semarang",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                fontSize = 16.sp,
+                color = secondary,
+                modifier = Modifier
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(
+            onClick = { },
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .size(40.dp),
+            colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_user),
+                contentDescription = null,
+                tint = secondary
+            )
+        }
+    }
+}
+
+@Composable
+fun ContentSection(viewModel: BuildingViewModel, modifier: Modifier = Modifier) {
+
+    Column(
+        modifier = modifier
+            .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
+            .background(gray2)
+            .padding(10.dp)
+
+
+    ) {
+
+
+    }
+}
+
+@Composable
+fun BuildingItem(onClick: (Int) -> Unit, building: Building) {
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .padding(10.dp)
+        .clip(RoundedCornerShape(16.dp))
+        .background(primary)
+        .clickable { onClick(building.building_id) }) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_wave),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+            alignment = Alignment.BottomEnd
+        )
+        Row {
+            Spacer(modifier = Modifier.width(10.dp))
+            Image(
+                painter = painterResource(id = R.drawable.ic_circle),
+                contentDescription = null,
+                modifier = Modifier.size(height = 150.dp, width = 10.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+                Text(
+                    text = building.name,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = white,
+                    modifier = Modifier
+                )
+                Text(
+                    text = "12 Kamar",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                    fontSize = 14.sp,
+                    color = white,
+                    modifier = Modifier
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(id = R.drawable.ic_building),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(60.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            Spacer(modifier = Modifier.width(50.dp))
+        }
+
+
+    }
+}

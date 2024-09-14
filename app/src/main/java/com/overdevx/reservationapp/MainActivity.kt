@@ -1,0 +1,269 @@
+package com.overdevx.reservationapp
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.overdevx.reservationapp.data.presentation.HomeScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.user.RoomsScreen
+import com.overdevx.reservationapp.ui.theme.ReservationAppTheme
+import com.overdevx.reservationapp.ui.theme.background
+import com.overdevx.reservationapp.ui.theme.secondary
+import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.ui.theme.white2
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.serialization.Serializable
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            ReservationAppTheme {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        lightScrim = Color(0x33000000).toArgb(),  // Tema terang
+                        darkScrim = Color(0x66ffffff).toArgb()
+                    )
+                )
+
+                ReserApp()
+            }
+        }
+    }
+
+    @Composable
+    fun ReserApp(modifier: Modifier = Modifier) {
+        val navController = rememberNavController()
+        var showBottomBar by remember { mutableStateOf(true) }
+
+        Scaffold(
+            containerColor = background,
+            bottomBar = {
+                if (showBottomBar) {
+                    AppBottomNavigation(navController = navController)
+                }
+            },
+
+
+            ) { innerPadding ->
+            NavHost(
+                modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
+                navController = navController,
+                startDestination = HomeRoute
+            ) {
+                composable<HomeRoute> {
+                    HomeScreen(
+                        modifier = Modifier.padding(
+                            end = 16.dp, start = 16.dp
+                        ),
+                        onClick = { buildingId,buildingName->
+                            navController.navigate(RoomsRouteAdmin(id=buildingId,name=buildingName))
+                        }
+                    )
+                    showBottomBar = true
+                }
+                composable<MonitoringRoute> {
+                    MonitoringScreen(
+                        modifier = Modifier.padding(
+                            end = 16.dp, start = 16.dp, bottom = innerPadding.calculateBottomPadding()
+                        ),
+                        onClick = { buildingId->
+                          navController.navigate(RoomsRouteUser(id=buildingId))
+                        }
+                    )
+                    showBottomBar = true
+                }
+                composable<HistoryRoute> {
+
+                    showBottomBar = true
+                }
+
+                composable<RoomsRouteUser> {
+                    val args = it.toRoute<RoomsRouteUser>()
+                    val buildingId = args.id
+                    RoomsScreen(
+                        modifier = Modifier,
+                        buildingId,
+                        onNavigateBack = {
+                            navController.navigateUp()
+                        },
+                    )
+                }
+              composable<RoomsRouteAdmin> {
+                    val args = it.toRoute<RoomsRouteAdmin>()
+                    val buildingId = args.id
+                    val buildingName = args.name
+                    AdminRoomScreen(
+                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                        buildingId,
+                        buildingName,
+                        onNavigateBack = {
+                            navController.navigateUp()
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun AppBottomNavigation(navController: NavController) {
+        val bottomScreens = remember {
+            listOf(
+                BottomScreens.Home,
+                BottomScreens.Monitoring,
+                BottomScreens.History,
+            )
+        }
+
+        BottomAppBar(
+            containerColor = secondary,
+            contentColor = white,
+            modifier = Modifier
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+        ) {
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+
+            bottomScreens.forEach { screen ->
+                val isSelected =
+                    currentDestination?.hierarchy?.any { it.route == screen.route::class.qualifiedName } == true
+                NavigationBarItem(
+                    selected = isSelected,
+                    onClick = {
+                        navController.navigate(screen.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    icon = {
+                        val icon =
+                            painterResource(id = if (isSelected) screen.selectedIconResId else screen.unselectedIconResId)
+                        val tint = if (isSelected) white else white2
+                        Icon(
+                            painter = icon,
+                            contentDescription = screen.name,
+                            tint = tint
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = screen.name,
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) white else white2
+                        )
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = Color.Transparent,
+                    )
+                )
+            }
+        }
+    }
+
+
+}
+
+@Serializable
+data object HomeRoute
+
+@Serializable
+data object MonitoringRoute
+
+@Serializable
+data object HistoryRoute
+
+@Serializable
+data class RoomsRouteUser(
+    val id: Int
+)
+
+@Serializable
+data class RoomsRouteAdmin(
+    val id: Int,
+    val name:String
+)
+
+
+@Serializable
+sealed class BottomScreens<T>(
+    val name: String,
+    val icon: Int,
+    val route: T,
+    @DrawableRes val selectedIconResId: Int,
+    @DrawableRes val unselectedIconResId: Int
+) {
+    @Serializable
+    data object Home : BottomScreens<HomeRoute>(
+        name = "Home",
+        icon = R.drawable.ic_home,
+        route = HomeRoute,
+        selectedIconResId = R.drawable.ic_home,
+        unselectedIconResId = R.drawable.ic_home
+    )
+
+    @Serializable
+    data object Monitoring : BottomScreens<MonitoringRoute>(
+        name = "Monitoring",
+        icon = R.drawable.ic_monitoring,
+        route = MonitoringRoute,
+        selectedIconResId = R.drawable.ic_monitoring,
+        unselectedIconResId = R.drawable.ic_monitoring
+    )
+
+    @Serializable
+    data object History : BottomScreens<HistoryRoute>(
+        name = "History",
+        icon = R.drawable.ic_history,
+        route = HistoryRoute,
+        selectedIconResId = R.drawable.ic_history,
+        unselectedIconResId = R.drawable.ic_history
+    )
+
+
+}
+

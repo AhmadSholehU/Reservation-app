@@ -19,6 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,14 +31,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.model.Room
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
@@ -50,25 +57,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 fun MonitoringScreen(
     modifier: Modifier = Modifier,
     viewModel: MonitoringViewModel = hiltViewModel(),
-    onClick: (Int) -> Unit
+    onClick: (Int) -> Unit,
+    onLoginClick: () -> Unit,
 ) {
     val roomState by viewModel.monitoringState.collectAsState()
     val roomCount by viewModel.roomCounts.collectAsState()
-
 
     Column(
         modifier = modifier
             .fillMaxSize()
     ) {
         Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = "Monitoring Ruang",
-            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-            fontSize = 24.sp,
-            style = MaterialTheme.typography.bodyMedium,
-            color = secondary,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        TopBarSection(onClick = { onLoginClick() })
         Spacer(modifier = Modifier.height(10.dp))
         LazyColumn {
             item {
@@ -163,7 +163,7 @@ fun MonitoringScreen(
                         is Resource.Error -> {
                             // Handle error dari Exception
                             val exceptionMessage = (roomState as Resource.Error).exception.message ?: "Unknown error occurred"
-                            Text(text = "Error: $exceptionMessage")
+                            ErrorItem(errorMsg = exceptionMessage)
                         }
 
                         else -> {}
@@ -177,7 +177,41 @@ fun MonitoringScreen(
 
     }
 }
+@Composable
+private fun TopBarSection(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth()
+            .align(Alignment.Center)) {
+            Text(
+                text = "Monitoring Ruang",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                fontSize = 22.sp,
+                style = MaterialTheme.typography.bodyMedium,
+                color = secondary,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
+        IconButton(
+            onClick = {onClick()  },
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(40.dp),
+            colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_user),
+                contentDescription = null,
+                tint = secondary
+            )
+        }
 
+    }
+}
 @Composable
 private fun GedungSection(
     modifier: Modifier = Modifier,

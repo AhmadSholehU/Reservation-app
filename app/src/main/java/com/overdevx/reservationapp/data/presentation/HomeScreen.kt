@@ -1,6 +1,7 @@
 package com.overdevx.reservationapp.data.presentation
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,22 +49,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Building
 import com.overdevx.reservationapp.data.model.Room
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.ui.theme.white2
 import com.overdevx.reservationapp.utils.Resource
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onClick: (Int,String) -> Unit,
+    onLogoutClick: () -> Unit,
     viewModel: BuildingViewModel = hiltViewModel()
 ) {
     val buildingState by viewModel.buildingState.collectAsState()
     Column(modifier = modifier.fillMaxSize()) {
-        HeaderSection()
+        HeaderSection(onLogoutClick = {onLogoutClick()})
         Spacer(modifier = Modifier.height(10.dp))
         when (buildingState) {
             is Resource.Loading -> {
@@ -93,6 +104,12 @@ fun HomeScreen(
                 Log.e("HomeScreen", "Error: $errorMessage")
             }
 
+            is Resource.Error -> {
+                // Handle error dari Exception
+                val exceptionMessage = (buildingState as Resource.Error).exception.message ?: "Unknown error occurred"
+                ErrorItem(errorMsg = exceptionMessage)
+            }
+
             else -> {}
         }
 
@@ -100,7 +117,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun HeaderSection(modifier: Modifier = Modifier) {
+fun HeaderSection(
+    modifier: Modifier = Modifier,
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLogoutClick: () -> Unit,
+) {
+    var showDialog by remember { mutableStateOf(false) }
     Row(modifier = modifier) {
         Image(
             painter = painterResource(id = R.drawable.img_smg),
@@ -129,7 +151,7 @@ fun HeaderSection(modifier: Modifier = Modifier) {
         }
         Spacer(modifier = Modifier.weight(1f))
         IconButton(
-            onClick = { },
+            onClick = { showDialog = true },
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .size(40.dp),
@@ -140,6 +162,97 @@ fun HeaderSection(modifier: Modifier = Modifier) {
                 contentDescription = null,
                 tint = secondary
             )
+        }
+
+        if (showDialog) {
+            Column(modifier = Modifier) {
+                AlertDialog(
+                    onDismissRequest = {
+
+                    }, // Menutup dialog saat di luar dialog ditekan
+                    title = {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_logout),
+                                contentDescription = null,
+                                tint = primary,
+                                modifier = Modifier
+                                    .size(55.dp)
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                        }
+
+                    },
+                    text = {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Log Out",
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                fontSize = 24.sp,
+                                color = primary,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Are you sure you want to log out?",
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                fontSize = 16.sp,
+                                color = white2,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = {
+                                showDialog = false
+                            },
+                            modifier = Modifier
+                                .height(55.dp)
+                                .fillMaxWidth()
+                                .align(Alignment.End),
+                            colors = ButtonDefaults.buttonColors(primary),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = "No, continue to app",
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                fontSize = 20.sp,
+                                color = white,
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.logoutUser()
+                                onLogoutClick()
+                                showDialog = false
+                            },
+                            modifier = Modifier
+                                .height(55.dp)
+                                .fillMaxWidth()
+                                .align(Alignment.End),
+                            border = BorderStroke(1.dp, primary),
+                            colors = ButtonDefaults.buttonColors(Color.Transparent),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text(
+                                text = "Yes, log me out",
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                fontSize = 20.sp,
+                                color = white,
+                            )
+                        }
+
+                    },
+                    containerColor = secondary
+                )
+            }
+
         }
     }
 }

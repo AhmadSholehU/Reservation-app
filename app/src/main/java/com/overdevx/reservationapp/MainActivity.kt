@@ -41,17 +41,24 @@ import androidx.navigation.toRoute
 import com.overdevx.reservationapp.data.presentation.HomeScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreenC
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.LoginScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.user.RoomsScreen
 import com.overdevx.reservationapp.ui.theme.ReservationAppTheme
 import com.overdevx.reservationapp.ui.theme.background
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.white2
+import com.overdevx.reservationapp.utils.TokenProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.Serializable
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var tokenProvider: TokenProvider
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -63,7 +70,6 @@ class MainActivity : ComponentActivity() {
                         darkScrim = Color(0x66ffffff).toArgb()
                     )
                 )
-
                 ReserApp()
             }
         }
@@ -71,6 +77,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ReserApp(modifier: Modifier = Modifier) {
+
+
         val navController = rememberNavController()
         var showBottomBar by remember { mutableStateOf(true) }
 
@@ -84,29 +92,90 @@ class MainActivity : ComponentActivity() {
 
 
             ) { innerPadding ->
+            // Cek apakah token sudah ada
+            val token = tokenProvider.getToken()
+            val startDestination = if (token.isNullOrEmpty()) {
+                MonitoringRoute
+            } else {
+                HomeRoute
+            }
             NavHost(
                 modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                 navController = navController,
-                startDestination = HomeRoute
+                startDestination = startDestination
             ) {
-                composable<HomeRoute> {
-                    HomeScreen(
-                        modifier = Modifier.padding(
-                            end = 16.dp, start = 16.dp
-                        ),
-                        onClick = { buildingId,buildingName->
-                            navController.navigate(RoomsRouteAdmin(id=buildingId,name=buildingName))
-                        }
+                composable<LoginRoute> {
+                    LoginScreen(
+                        onLoginClick = {
+                            navController.navigate(HomeRoute) {
+                                popUpTo(LoginRoute) { inclusive = true }
+                            }
+                        },
+                        navController = navController,
+                        modifier = Modifier
+                            .padding(bottom = innerPadding.calculateBottomPadding())
                     )
+                    showBottomBar = false
+                }
+                composable<HomeRoute> {
+                    if (token.isNullOrEmpty()) {
+                        MonitoringScreen(
+                            modifier = Modifier.padding(
+                                end = 16.dp,
+                                start = 16.dp,
+                                bottom = innerPadding.calculateBottomPadding()
+                            ),
+                            onClick = { buildingId ->
+                                navController.navigate(RoomsRouteUser(id = buildingId))
+                            },
+                            onLoginClick = {
+                                navController.navigate(LoginRoute)
+                            }
+                        )
+                    } else {
+                        HomeScreen(
+                            modifier = Modifier.padding(
+                                end = 16.dp, start = 16.dp
+                            ),
+                            onClick = { buildingId, buildingName ->
+                                if (buildingId == 3) {
+                                    navController.navigate(
+                                        RoomsRouteAdminC(
+                                            id = buildingId,
+                                            name = buildingName
+                                        )
+                                    )
+                                } else {
+                                    navController.navigate(
+                                        RoomsRouteAdmin(
+                                            id = buildingId,
+                                            name = buildingName
+                                        )
+                                    )
+                                }
+                            },
+                            onLogoutClick = {
+                                navController.navigate(LoginRoute) {
+                                    popUpTo<HomeRoute> { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
                     showBottomBar = true
                 }
                 composable<MonitoringRoute> {
                     MonitoringScreen(
                         modifier = Modifier.padding(
-                            end = 16.dp, start = 16.dp, bottom = innerPadding.calculateBottomPadding()
+                            end = 16.dp,
+                            start = 16.dp,
+                            bottom = innerPadding.calculateBottomPadding()
                         ),
-                        onClick = { buildingId->
-                          navController.navigate(RoomsRouteUser(id=buildingId))
+                        onClick = { buildingId ->
+                            navController.navigate(RoomsRouteUser(id = buildingId))
+                        },
+                        onLoginClick = {
+                            navController.navigate(LoginRoute)
                         }
                     )
                     showBottomBar = true
@@ -127,11 +196,25 @@ class MainActivity : ComponentActivity() {
                         },
                     )
                 }
-              composable<RoomsRouteAdmin> {
+                composable<RoomsRouteAdmin> {
                     val args = it.toRoute<RoomsRouteAdmin>()
                     val buildingId = args.id
                     val buildingName = args.name
                     AdminRoomScreen(
+                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                        buildingId,
+                        buildingName,
+                        onNavigateBack = {
+                            navController.navigateUp()
+                        }
+                    )
+                }
+
+                composable<RoomsRouteAdminC> {
+                    val args = it.toRoute<RoomsRouteAdminC>()
+                    val buildingId = args.id
+                    val buildingName = args.name
+                    AdminRoomScreenC(
                         modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
                         buildingId,
                         buildingName,
@@ -209,6 +292,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Serializable
+data object LoginRoute
+
+@Serializable
 data object HomeRoute
 
 @Serializable
@@ -225,7 +311,13 @@ data class RoomsRouteUser(
 @Serializable
 data class RoomsRouteAdmin(
     val id: Int,
-    val name:String
+    val name: String
+)
+
+@Serializable
+data class RoomsRouteAdminC(
+    val id: Int,
+    val name: String
 )
 
 

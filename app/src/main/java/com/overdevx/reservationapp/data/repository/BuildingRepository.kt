@@ -7,11 +7,11 @@ import com.overdevx.reservationapp.utils.Resource
 import javax.inject.Inject
 
 class BuildingRepository @Inject constructor(
-    private val apiService: ApiService
+    private val publicApiService: ApiService
 ) {
     suspend fun getBuilding(): Resource<List<Building>> {
         return try {
-            val response = apiService.getBuilding()
+            val response = publicApiService.getBuilding()
             if (response.status == "success") {
                 Resource.Success(response.data)
             } else {

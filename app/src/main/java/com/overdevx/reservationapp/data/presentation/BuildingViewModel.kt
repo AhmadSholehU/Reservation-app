@@ -30,4 +30,8 @@ class BuildingViewModel @Inject constructor(
         }
 
     }
+
+    fun resetBuildingState() {
+        _buildingState.value = Resource.Idle
+    }
 }

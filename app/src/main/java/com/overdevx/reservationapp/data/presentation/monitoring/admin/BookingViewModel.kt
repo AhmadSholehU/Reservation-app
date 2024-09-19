@@ -43,4 +43,8 @@ class BookingViewModel @Inject constructor(
             _updateRoomState.value = result
         }
     }
+
+    fun resetBookingState() {
+        _updateRoomState.value = Resource.Idle
+    }
 }

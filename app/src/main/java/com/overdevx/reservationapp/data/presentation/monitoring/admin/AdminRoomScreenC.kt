@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +26,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +61,9 @@ import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.utils.Resource
+import kotlinx.coroutines.launch
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AdminRoomScreenC(
     modifier: Modifier = Modifier,
@@ -75,6 +83,9 @@ fun AdminRoomScreenC(
 
     val bookingState by viewModelBooking.bookingState.collectAsState()
     val updateRoomState by viewModelBooking.updateRoomState.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     Column(modifier = modifier.padding(16.dp)) {
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName = buildingName)
         Spacer(modifier = Modifier.height(16.dp))
@@ -124,13 +135,13 @@ fun AdminRoomScreenC(
             }
             is Resource.Success -> {
                 Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        text="Update Status successful for room $selectedRoomNumber",
-                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                        fontSize = 22.sp,
-                        color = secondary,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Update Status successful",
+                            duration = SnackbarDuration.Short)
+                        viewModelBooking.resetBookingState()
+                        viewModel.fetchRooms(buildingId)
+                    }
                 }
             }
             is Resource.ErrorMessage -> {
@@ -149,13 +160,13 @@ fun AdminRoomScreenC(
             }
 
             is Resource.Success -> {
-                Text(
-                    text = "Update Status successful for room $selectedRoomNumber",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 22.sp,
-                    color = secondary,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Update Status successful",
+                        duration = SnackbarDuration.Short)
+                    viewModelBooking.resetBookingState()
+                    viewModel.fetchRooms(buildingId)
+                }
             }
 
             is Resource.ErrorMessage -> {
@@ -163,6 +174,38 @@ fun AdminRoomScreenC(
             }
 
             else -> {}
+        }
+
+        Row{
+            // Menampilkan Snackbar dengan SnackbarHost
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.Bottom),
+                snackbar = { snackbarData ->
+                    Snackbar(
+                        action = {
+                            Text(
+                                text = "Dismiss",
+                                color = Color.White,
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
+                                fontSize = 12.sp,
+                                modifier = Modifier.clickable {
+                                    snackbarData.dismiss()  // Menutup Snackbar saat di klik
+                                }
+                            )
+                        },
+                        modifier = Modifier.padding(16.dp),
+                        containerColor = primary
+                    ) {
+                        Text(
+                            text = snackbarData.visuals.message,
+                            color = Color.White,
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            )
         }
     }
 

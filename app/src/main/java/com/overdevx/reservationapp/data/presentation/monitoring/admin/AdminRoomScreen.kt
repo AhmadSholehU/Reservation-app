@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -28,31 +29,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,19 +66,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.ui.AppBarConfiguration
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
-import com.overdevx.reservationapp.data.presentation.monitoring.user.RoomItem
 import com.overdevx.reservationapp.ui.theme.gray
-import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.utils.Resource
+import kotlinx.coroutines.launch
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AdminRoomScreen(
     modifier: Modifier = Modifier,
@@ -101,6 +98,8 @@ fun AdminRoomScreen(
     val bookingState by viewModelBooking.bookingState.collectAsState()
     val updateRoomState by viewModelBooking.updateRoomState.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     Column(modifier = modifier.padding(16.dp)) {
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName)
         Spacer(modifier = Modifier.height(10.dp))
@@ -137,15 +136,15 @@ fun AdminRoomScreen(
                 buildingName = buildingName,
                 onBooking = {
                     selectedRoomNumber?.let {
-                        var statusId = when(room_status){
+                        var statusId = when (room_status) {
                             "Tersedia" -> 1
                             "Tidak Tersedia" -> 2
                             "Terbooking" -> 3
                             else -> 1
                         }
-                        if(room_status == "Terbooking"){
+                        if (room_status == "Terbooking") {
                             viewModelBooking.bookRoom(room_id, days)
-                        }else{
+                        } else {
                             viewModelBooking.updateRoomStatus(room_id, statusId)
                         }
 
@@ -170,13 +169,14 @@ fun AdminRoomScreen(
             }
 
             is Resource.Success -> {
-                Text(
-                    text = "Update Status successful for room $selectedRoomNumber",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 22.sp,
-                    color = secondary,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Update Status successful",
+                        duration = SnackbarDuration.Short
+                    )
+                    viewModelBooking.resetBookingState()
+                    viewModel.fetchRooms(buildingId)
+                }
             }
 
             is Resource.ErrorMessage -> {
@@ -197,13 +197,15 @@ fun AdminRoomScreen(
             }
 
             is Resource.Success -> {
-                Text(
-                    text = "Update Status successful for room $selectedRoomNumber",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 22.sp,
-                    color = secondary,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Update Status successful",
+                        duration = SnackbarDuration.Short
+                    )
+                    viewModelBooking.resetBookingState()
+                    viewModel.fetchRooms(buildingId)
+                }
+
             }
 
             is Resource.ErrorMessage -> {
@@ -213,9 +215,39 @@ fun AdminRoomScreen(
             else -> {}
         }
 
+        Row {
+            // Menampilkan Snackbar dengan SnackbarHost
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.Bottom),
+                snackbar = { snackbarData ->
+                    Snackbar(
+                        action = {
+                            Text(
+                                text = "Dismiss",
+                                color = Color.White,
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
+                                fontSize = 12.sp,
+                                modifier = Modifier.clickable {
+                                    snackbarData.dismiss()  // Menutup Snackbar saat di klik
+                                }
+                            )
+                        },
+                        modifier = Modifier.padding(16.dp),
+                        containerColor = primary
+                    ) {
+                        Text(
+                            text = snackbarData.visuals.message,
+                            color = Color.White,
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            )
+        }
 
     }
-
 }
 
 @Composable
@@ -638,6 +670,7 @@ fun StatusDialog(
                 onClick = {
                     // Lakukan sesuatu dengan status dan waktu penyewaan yang dipilih
                     onBooking()
+                    onDismiss()
                 },
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -754,3 +787,53 @@ fun ErrorItem(errorMsg: String, modifier: Modifier = Modifier) {
         )
     }
 }
+
+@Composable
+fun Access(onLoginClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Column(modifier = Modifier.align(Alignment.Center)) {
+            Image(
+                painter = painterResource(id = R.drawable.img_admin),
+                contentDescription = null,
+                Modifier
+                    .size(200.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                "Anda harus login sebagai Admin",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 18.sp,
+                color = secondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Button(
+                onClick = {
+                    onLoginClick()
+                },
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = primary,
+                ),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(height = Dp.Unspecified, width = 100.dp)
+            ) {
+                Text(
+                    text = "Login",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                    color = white,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            }
+        }
+
+    }
+}
+

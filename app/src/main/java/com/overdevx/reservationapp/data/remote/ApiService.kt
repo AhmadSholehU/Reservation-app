@@ -3,6 +3,7 @@ package com.overdevx.reservationapp.data.remote
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BuildingResponse
+import com.overdevx.reservationapp.data.model.HistoryResponse
 import com.overdevx.reservationapp.data.model.LoginRequest
 import com.overdevx.reservationapp.data.model.LoginResponse
 import com.overdevx.reservationapp.data.model.MonitoringResponse
@@ -46,5 +47,7 @@ interface ApiService {
         @Body updateRoomsRequest: UpdateRoomsRequest
     ): Response<UpdateRoomsResponse>
 
+    @GET("history")
+    suspend fun getHistory(): HistoryResponse
 }
 

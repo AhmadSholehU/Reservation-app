@@ -68,7 +68,7 @@ fun HomeScreen(
 ) {
     val buildingState by viewModel.buildingState.collectAsState()
     Column(modifier = modifier.fillMaxSize()) {
-        HeaderSection(onLogoutClick = {onLogoutClick()})
+        HeaderSection(buildingViewModel = viewModel, onLogoutClick = {onLogoutClick()})
         Spacer(modifier = Modifier.height(10.dp))
         when (buildingState) {
             is Resource.Loading -> {
@@ -94,7 +94,9 @@ fun HomeScreen(
                                 )
                             }
                         }
+
                     }
+
                 }
             }
 
@@ -120,6 +122,7 @@ fun HomeScreen(
 fun HeaderSection(
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = hiltViewModel(),
+    buildingViewModel: BuildingViewModel,
     onLogoutClick: () -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -229,6 +232,7 @@ fun HeaderSection(
                         Button(
                             onClick = {
                                 viewModel.logoutUser()
+                                buildingViewModel.resetBuildingState()
                                 onLogoutClick()
                                 showDialog = false
                             },

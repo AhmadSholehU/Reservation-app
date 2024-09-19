@@ -40,9 +40,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.overdevx.reservationapp.data.presentation.HomeScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.Access
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreenC
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.LoginScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.history.HistoryScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.user.RoomsScreen
 import com.overdevx.reservationapp.ui.theme.ReservationAppTheme
 import com.overdevx.reservationapp.ui.theme.background
@@ -77,8 +79,6 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ReserApp(modifier: Modifier = Modifier) {
-
-
         val navController = rememberNavController()
         var showBottomBar by remember { mutableStateOf(true) }
 
@@ -118,20 +118,14 @@ class MainActivity : ComponentActivity() {
                     showBottomBar = false
                 }
                 composable<HomeRoute> {
-                    if (token.isNullOrEmpty()) {
-                        MonitoringScreen(
-                            modifier = Modifier.padding(
-                                end = 16.dp,
-                                start = 16.dp,
-                                bottom = innerPadding.calculateBottomPadding()
-                            ),
-                            onClick = { buildingId ->
-                                navController.navigate(RoomsRouteUser(id = buildingId))
-                            },
-                            onLoginClick = {
-                                navController.navigate(LoginRoute)
-                            }
-                        )
+                    val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
+                    if (token2.isNullOrEmpty()) {
+                      Access(
+                          onLoginClick = {
+                              navController.navigate(LoginRoute)
+                          },
+                          modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
+
                     } else {
                         HomeScreen(
                             modifier = Modifier.padding(
@@ -155,7 +149,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onLogoutClick = {
-                                navController.navigate(LoginRoute) {
+                                navController.navigate(MonitoringRoute) {
                                     popUpTo<HomeRoute> { inclusive = true }
                                 }
                             }
@@ -222,6 +216,11 @@ class MainActivity : ComponentActivity() {
                             navController.navigateUp()
                         }
                     )
+                }
+
+                composable<HistoryRoute> {
+                    HistoryScreen()
+                    showBottomBar = true
                 }
             }
         }
@@ -320,7 +319,6 @@ data class RoomsRouteAdminC(
     val name: String
 )
 
-
 @Serializable
 sealed class BottomScreens<T>(
     val name: String,
@@ -331,11 +329,11 @@ sealed class BottomScreens<T>(
 ) {
     @Serializable
     data object Home : BottomScreens<HomeRoute>(
-        name = "Home",
-        icon = R.drawable.ic_home,
+        name = "Control",
+        icon = R.drawable.ic_control,
         route = HomeRoute,
-        selectedIconResId = R.drawable.ic_home,
-        unselectedIconResId = R.drawable.ic_home
+        selectedIconResId = R.drawable.ic_control,
+        unselectedIconResId = R.drawable.ic_control
     )
 
     @Serializable

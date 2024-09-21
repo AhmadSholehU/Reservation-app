@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.ui.theme.primary
@@ -62,7 +63,7 @@ fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit
     val password by viewModel.password.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
 
-    val loginState by viewModel.loginState.collectAsState()
+    val loginState by viewModel.loginState.collectAsStateWithLifecycle()
     var hasShownDialog by remember { mutableStateOf(false) }
 
     var passwordVisible by remember { mutableStateOf(false) }

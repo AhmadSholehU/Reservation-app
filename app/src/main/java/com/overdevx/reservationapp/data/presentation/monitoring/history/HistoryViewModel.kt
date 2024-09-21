@@ -19,9 +19,6 @@ class HistoryViewModel @Inject constructor(
     private val _historyState = MutableStateFlow<Resource<List<History>>>(Resource.Idle)
     val historyState: StateFlow<Resource<List<History>>> = _historyState
 
-    init {
-        fetchHistory()
-    }
     fun fetchHistory() {
         viewModelScope.launch {
             _historyState.value = Resource.Loading

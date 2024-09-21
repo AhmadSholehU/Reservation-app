@@ -19,11 +19,8 @@ class BuildingViewModel @Inject constructor(
     private val _buildingState = MutableStateFlow<Resource<List<Building>>>(Resource.Idle)
     val buildingState: StateFlow<Resource<List<Building>>> = _buildingState
 
-    init {
-        fetchBuilding()
-    }
 
-    private fun fetchBuilding() {
+     fun fetchBuilding() {
         viewModelScope.launch {
             _buildingState.value = Resource.Loading
             _buildingState.value = repository.getBuilding()

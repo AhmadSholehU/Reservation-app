@@ -22,9 +22,7 @@ class MonitoringViewModel @Inject constructor(
     // Variabel global untuk menyimpan data gedung setelah fetch
     private val _roomCounts = MutableStateFlow<List<Monitoring>>(emptyList())
     val roomCounts: StateFlow<List<Monitoring>> = _roomCounts
-    init {
-        fetchMonitoring()
-    }
+
     fun fetchMonitoring() {
         viewModelScope.launch {
             _monitoringState.value = Resource.Loading
@@ -37,7 +35,5 @@ class MonitoringViewModel @Inject constructor(
             }
         }
     }
-
-
 
 }

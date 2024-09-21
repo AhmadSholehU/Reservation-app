@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
@@ -95,11 +96,14 @@ fun AdminRoomScreen(
     var room_id by remember { mutableStateOf(0) }
     var room_status by remember { mutableStateOf("Tersedia") }
 
-    val bookingState by viewModelBooking.bookingState.collectAsState()
-    val updateRoomState by viewModelBooking.updateRoomState.collectAsState()
+    val bookingState by viewModelBooking.bookingState.collectAsStateWithLifecycle()
+    val updateRoomState by viewModelBooking.updateRoomState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) {
+        viewModel.fetchRooms(buildingId)
+    }
     Column(modifier = modifier.padding(16.dp)) {
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName)
         Spacer(modifier = Modifier.height(10.dp))
@@ -203,6 +207,7 @@ fun AdminRoomScreen(
                         duration = SnackbarDuration.Short
                     )
                     viewModelBooking.resetBookingState()
+                    viewModelBooking.resetUpdateState()
                     viewModel.fetchRooms(buildingId)
                 }
 
@@ -367,7 +372,7 @@ private fun RoomSection(
     selectedRoomNumber: String?,
     onRoomSelected: (String?, Int?) -> Unit
 ) {
-    val roomState by viewModel.roomState.collectAsState()
+    val roomState by viewModel.roomState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.fetchRooms(buildingId)
@@ -531,7 +536,7 @@ fun StatusDialog(
     modifier: Modifier
 ) {
     // State untuk menyimpan status dan waktu penyewaan yang dipilih
-    var selectedStatus by remember { mutableStateOf("Tersedia") }
+    var selectedStatus by remember { mutableStateOf("") }
     var rentalDuration by remember { mutableStateOf("1") }
 
     AlertDialog(

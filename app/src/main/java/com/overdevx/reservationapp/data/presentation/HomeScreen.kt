@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Building
 import com.overdevx.reservationapp.data.model.Room
@@ -66,13 +67,19 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     viewModel: BuildingViewModel = hiltViewModel()
 ) {
-    val buildingState by viewModel.buildingState.collectAsState()
+    val buildingState by viewModel.buildingState.collectAsStateWithLifecycle()
+
     Column(modifier = modifier.fillMaxSize()) {
         HeaderSection(buildingViewModel = viewModel, onLogoutClick = {onLogoutClick()})
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         when (buildingState) {
             is Resource.Loading -> {
-                CircularProgressIndicator()
+                Column (modifier=Modifier.fillMaxWidth()){
+                    CircularProgressIndicator(
+                        color = primary,
+                        modifier=Modifier.align(Alignment.CenterHorizontally))
+                }
+
             }
 
             is Resource.Success -> {
@@ -87,7 +94,7 @@ fun HomeScreen(
                                 .background(white)
                                 .padding(10.dp)
                         ) {
-                            items(buildings) { building ->
+                            items(buildings, key = {it.building_id}) { building ->
                                 BuildingItem(
                                     onClick = { onClick(building.building_id,building.name) },
                                     building = building
@@ -110,6 +117,12 @@ fun HomeScreen(
                 // Handle error dari Exception
                 val exceptionMessage = (buildingState as Resource.Error).exception.message ?: "Unknown error occurred"
                 ErrorItem(errorMsg = exceptionMessage)
+            }
+
+            is Resource.Idle ->{
+                LaunchedEffect(Unit) {
+                    viewModel.fetchBuilding()
+                }
             }
 
             else -> {}

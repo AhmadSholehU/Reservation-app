@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
@@ -75,12 +76,12 @@ fun RoomsScreen(
 
 @Composable
 private fun TopBarSection(onNavigateBack: () -> Unit,modifier: Modifier) {
-    Row(modifier = modifier.fillMaxWidth()) {
+    Box(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.width(16.dp))
         IconButton(
             onClick = { onNavigateBack()},
             modifier = Modifier
-                .align(Alignment.CenterVertically)
+                .align(Alignment.CenterStart)
                 .size(40.dp),
             colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
         ) {
@@ -90,14 +91,13 @@ private fun TopBarSection(onNavigateBack: () -> Unit,modifier: Modifier) {
                 tint = secondary
             )
         }
-        Spacer(modifier = Modifier.width(100.dp))
         Text(
             text = "Monitoring Ruang",
             fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
             fontSize = 24.sp,
             style = MaterialTheme.typography.bodyMedium,
             color = secondary,
-            modifier = Modifier.align(Alignment.CenterVertically)
+            modifier = Modifier.align(Alignment.Center)
         )
     }
 }
@@ -167,7 +167,7 @@ private fun InfoSection(modifier: Modifier = Modifier) {
 
 @Composable
 private fun RoomSection(modifier: Modifier = Modifier,viewModel: RoomsViewModel,buildingId:Int) {
-    val roomState by viewModel.roomState.collectAsState()
+    val roomState by viewModel.roomState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
       viewModel.fetchRooms(buildingId)
     }

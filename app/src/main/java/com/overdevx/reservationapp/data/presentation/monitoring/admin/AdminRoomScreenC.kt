@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
@@ -81,8 +82,8 @@ fun AdminRoomScreenC(
     var room_id by remember { mutableStateOf(0) }
     var room_status by remember { mutableStateOf("Tersedia") }
 
-    val bookingState by viewModelBooking.bookingState.collectAsState()
-    val updateRoomState by viewModelBooking.updateRoomState.collectAsState()
+    val bookingState by viewModelBooking.bookingState.collectAsStateWithLifecycle()
+    val updateRoomState by viewModelBooking.updateRoomState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -257,7 +258,7 @@ private fun RoomSection(
     onRoomSelected: (String?,Int?) -> Unit
 ) {
 
-    val roomState by viewModel.roomState.collectAsState()
+    val roomState by viewModel.roomState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.fetchRooms(buildingId)

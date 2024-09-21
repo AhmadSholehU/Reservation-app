@@ -168,14 +168,7 @@ class MainActivity : ComponentActivity() {
                         onClick = { buildingId ->
                             navController.navigate(RoomsRouteUser(id = buildingId))
                         },
-                        onLoginClick = {
-                            navController.navigate(LoginRoute)
-                        }
                     )
-                    showBottomBar = true
-                }
-                composable<HistoryRoute> {
-
                     showBottomBar = true
                 }
 
@@ -219,7 +212,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 composable<HistoryRoute> {
-                    HistoryScreen()
+                    HistoryScreen(modifier = Modifier
+                        .padding(bottom = innerPadding.calculateBottomPadding()))
                     showBottomBar = true
                 }
             }

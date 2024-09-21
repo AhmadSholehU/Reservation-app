@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.model.Room
@@ -58,17 +60,17 @@ fun MonitoringScreen(
     modifier: Modifier = Modifier,
     viewModel: MonitoringViewModel = hiltViewModel(),
     onClick: (Int) -> Unit,
-    onLoginClick: () -> Unit,
+
 ) {
-    val roomState by viewModel.monitoringState.collectAsState()
-    val roomCount by viewModel.roomCounts.collectAsState()
+    val roomState by viewModel.monitoringState.collectAsStateWithLifecycle()
+    val roomCount by viewModel.roomCounts.collectAsStateWithLifecycle()
 
     Column(
         modifier = modifier
             .fillMaxSize()
     ) {
         Spacer(modifier = Modifier.height(10.dp))
-        TopBarSection(onClick = { onLoginClick() })
+        TopBarSection()
         Spacer(modifier = Modifier.height(10.dp))
         LazyColumn {
             item {
@@ -89,10 +91,6 @@ fun MonitoringScreen(
                             val errorMessage = (roomState as Resource.ErrorMessage).message
                             Log.e("MONITORING", errorMessage)
                             Text(text = "Error: $errorMessage")
-                        }
-
-                        Resource.Idle -> {
-
                         }
 
                         is Resource.Success -> {
@@ -166,6 +164,12 @@ fun MonitoringScreen(
                             ErrorItem(errorMsg = exceptionMessage)
                         }
 
+                        is Resource.Idle -> {
+                            LaunchedEffect(Unit) {
+                                viewModel.fetchMonitoring()
+                            }
+                        }
+
                         else -> {}
                     }
 
@@ -179,7 +183,6 @@ fun MonitoringScreen(
 }
 @Composable
 private fun TopBarSection(
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
@@ -194,19 +197,6 @@ private fun TopBarSection(
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-        }
-        IconButton(
-            onClick = {onClick()  },
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(40.dp),
-            colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_user),
-                contentDescription = null,
-                tint = secondary
             )
         }
 
@@ -284,7 +274,7 @@ private fun GedungSection(
 
 @Composable
 private fun KelasSection(modifier: Modifier = Modifier, viewModel: MonitoringViewModel) {
-    val roomCount by viewModel.roomCounts.collectAsState()
+    val roomCount by viewModel.roomCounts.collectAsStateWithLifecycle()
 
 
     roomCount.filter { it.building_name == "Gedung C" }

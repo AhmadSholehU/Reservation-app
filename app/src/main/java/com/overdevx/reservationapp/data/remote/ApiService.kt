@@ -48,6 +48,6 @@ interface ApiService {
     ): Response<UpdateRoomsResponse>
 
     @GET("history")
-    suspend fun getHistory(): HistoryResponse
+    suspend fun getHistory(): Response<HistoryResponse>
 }
 

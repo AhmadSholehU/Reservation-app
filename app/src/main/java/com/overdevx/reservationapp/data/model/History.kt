@@ -6,22 +6,22 @@ data class HistoryResponse(
     val data: List<History>
 )
 data class History(
-    val bookingRoomId: Int,
-    val bookingId: Int,
-    val roomId: Int,
+    val booking_room_id: Int,
+    val booking_id: Int,
+    val room_id: Int,
     val days: Int,
     val detail: BookingDetail
 )
 
 data class BookingDetail(
-    val roomNumber: String,
-    val typeName: String,
-    val booking: BookingInfo,
-    val building: BuildingInfo
+    val room_number: String,
+    val type_name: String,
+    val Booking: BookingInfo,
+    val Building: BuildingInfo
 )
 
 data class BookingInfo(
-    val bookingDate: String
+    val booking_date: String
 )
 
 data class BuildingInfo(

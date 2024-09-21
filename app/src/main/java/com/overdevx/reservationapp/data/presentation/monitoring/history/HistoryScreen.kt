@@ -1,6 +1,7 @@
 package com.overdevx.reservationapp.data.presentation.monitoring.history
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,16 +11,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -27,9 +31,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.History
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
+import com.overdevx.reservationapp.ui.theme.gray
+import com.overdevx.reservationapp.ui.theme.gray3
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
@@ -42,10 +49,12 @@ fun HistoryScreen(
     historyViewModel: HistoryViewModel= hiltViewModel(),
     modifier: Modifier = Modifier) {
 
-    val historyState by historyViewModel.historyState.collectAsState()
+    val historyState by historyViewModel.historyState.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.padding(16.dp)) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier
+        .padding(16.dp)
+        .fillMaxSize()) {
+
             Text(
                 text = "Riwayat",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
@@ -53,17 +62,11 @@ fun HistoryScreen(
                 color = secondary,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp,
-                modifier = Modifier.align(Alignment.CenterVertically)
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-        }
+
         Spacer(modifier = Modifier.height(10.dp))
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-
-        }
-
         when (historyState) {
             is Resource.Loading -> {
                 Column(Modifier.fillMaxWidth()) {
@@ -75,27 +78,30 @@ fun HistoryScreen(
             }
             is Resource.Success -> {
                 val bookingHistoryList = (historyState as Resource.Success<List<History>>).data
-                val groupedData = bookingHistoryList?.groupBy { formatDate(it.detail.booking.bookingDate) }
-
+                Log.d("HomeScreen", "Booking History List: $bookingHistoryList")
+                val groupedData = bookingHistoryList?.groupBy { formatDate(it.detail.Booking.booking_date) }
+                Log.d("HomeScreen", "Grouped Data: $groupedData")
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(gray3)
+                        .padding(10.dp)
+
                 ) {
-                    if (groupedData != null) {
-                        groupedData.forEach { (date, bookings) ->
-                            item {
-                                // Date Header
-                                Text(
-                                    text = date,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
-                            }
-                            items(bookings) { booking ->
-                                BookingItem(booking)
-                            }
+                    groupedData?.forEach { (date, bookings) ->
+                        item {
+                            // Date Header
+                            Text(
+                                text = date,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = secondary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(bookings, key = {it.booking_id}) { booking ->
+                            BookingItem(booking)
                         }
                     }
                 }
@@ -114,10 +120,17 @@ fun HistoryScreen(
                 ErrorItem(errorMsg = exceptionMessage)
             }
 
+            is Resource.Idle -> {
+                LaunchedEffect(Unit) {
+                    historyViewModel.fetchHistory()
+                }
+            }
             else -> {}
         }
+
     }
 }
+
 @Composable
 fun BookingItem(history: History) {
     Card(
@@ -130,13 +143,13 @@ fun BookingItem(history: History) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = history.detail.building.name,
+                text = history.detail.Building.name,
                 color = white,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
             Text(
-                text = "Ruang ${history.detail.roomNumber}",
+                text = "Ruang ${history.detail.room_number}",
                 color = white2,
                 fontSize = 12.sp
             )

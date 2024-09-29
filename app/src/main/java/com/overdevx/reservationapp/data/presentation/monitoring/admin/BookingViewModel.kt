@@ -2,7 +2,10 @@ package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.overdevx.reservationapp.data.model.BookingResponse
+import com.overdevx.reservationapp.data.model.BookingRoom
+import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
 import com.overdevx.reservationapp.data.repository.BookingRespository
 import com.overdevx.reservationapp.utils.Resource
@@ -25,13 +28,19 @@ class BookingViewModel @Inject constructor(
     private val _bookingState = MutableStateFlow<Resource<BookingResponse>>(Resource.Idle)
     val bookingState: StateFlow<Resource<BookingResponse>> = _bookingState
 
+    private val _updatatebookingState = MutableStateFlow<Resource<BookingRoomResponse>>(Resource.Idle)
+    val updatatebookingState: StateFlow<Resource<BookingRoomResponse>> = _updatatebookingState
+
     private val _updateRoomState = MutableStateFlow<Resource<UpdateRoomsResponse>>(Resource.Idle)
     val updateRoomState: StateFlow<Resource<UpdateRoomsResponse>> = _updateRoomState
 
-    fun bookRoom(roomId: Int, days: Int) {
+    private val _getBookingRoomState = MutableStateFlow<Resource<BookingRoomResponse>>(Resource.Idle)
+    val getBookingState: StateFlow<Resource<BookingRoomResponse>> = _getBookingRoomState
+
+    fun bookRoom(roomId: Int, days: Int,date:String) {
         viewModelScope.launch {
             _bookingState.value = Resource.Loading
-            val result = bookingRepository.booking(roomId, days)
+            val result = bookingRepository.booking(roomId, days,date)
             _bookingState.value = result
         }
     }
@@ -44,6 +53,22 @@ class BookingViewModel @Inject constructor(
         }
     }
 
+    fun getBookingRoom(roomId: Int) {
+        viewModelScope.launch {
+            _getBookingRoomState.value = Resource.Loading
+            val result = bookingRepository.getBookingRoom(roomId)
+            _getBookingRoomState.value = result  // Update the state with the fetched data
+        }
+    }
+
+    fun updateBookingRoom(roomId: Int,bookingRoomId:Int,days: Int,date:String){
+        viewModelScope.launch {
+            _updatatebookingState.value=Resource.Loading
+            val result=bookingRepository.updateBookingRoom(roomId,bookingRoomId,days,date)
+            _updatatebookingState.value=result
+        }
+    }
+
     fun resetUpdateState() {
         _updateRoomState.value = Resource.Idle
     }
@@ -51,6 +76,10 @@ class BookingViewModel @Inject constructor(
 
     fun resetBookingState() {
         _bookingState.value = Resource.Idle
+    }
+
+    fun resetUpdateBookingState() {
+        _updatatebookingState.value = Resource.Idle
     }
 
 }

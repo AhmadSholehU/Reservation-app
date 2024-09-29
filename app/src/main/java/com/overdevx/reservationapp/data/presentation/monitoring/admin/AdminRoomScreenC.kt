@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -31,6 +32,8 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
+import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
 import com.overdevx.reservationapp.ui.theme.gray
@@ -62,6 +66,7 @@ import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.utils.Resource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -78,21 +83,37 @@ fun AdminRoomScreenC(
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
 
-    var days by remember { mutableStateOf(0) }
+    var days_change by remember { mutableStateOf(0) }
     var room_id by remember { mutableStateOf(0) }
     var room_status by remember { mutableStateOf("Tersedia") }
+    var selected_date by remember { mutableStateOf("") }
+    var current_room_status by remember { mutableStateOf("") }
+    var booking_room_id by remember { mutableStateOf(0) }
 
     val bookingState by viewModelBooking.bookingState.collectAsStateWithLifecycle()
     val updateRoomState by viewModelBooking.updateRoomState.collectAsStateWithLifecycle()
+    val bookingRoomState by viewModelBooking.getBookingState.collectAsStateWithLifecycle()
+    val updateBookingRoomState by viewModelBooking.updatatebookingState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedRoomNumber) {
+        selectedRoomNumber?.let {
+            viewModelBooking.getBookingRoom(room_id ?: return@LaunchedEffect)
+        }
+    }
     Column(modifier = modifier.padding(16.dp)) {
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName = buildingName)
+
         Spacer(modifier = Modifier.height(16.dp))
-        RoomSection(viewModel = viewModel, buildingId = buildingId, selectedRoomNumber = selectedRoomNumber) {roomNumber,roomId->
+
+        RoomSection(viewModel = viewModel, buildingId = buildingId, selectedRoomNumber = selectedRoomNumber) {roomNumber,roomId,roomStatus->
             selectedRoomNumber = roomNumber
             showDialog = roomNumber != null
+            if (roomStatus != null) {
+                current_room_status = roomStatus
+            }
             if (roomId != null) {
                 room_id = roomId
             }
@@ -111,9 +132,15 @@ fun AdminRoomScreenC(
                             "Terbooking" -> 3
                             else -> 1
                         }
-                        if(room_status == "Terbooking"){
-                            viewModelBooking.bookRoom(room_id, days)
-                        }else{
+                        // Differentiate between update and create booking based on initial and selected statuses
+                        if (current_room_status == "booked" && room_status == "Terbooking") {
+                            // Use update booking endpoint if already booked
+                            viewModelBooking.updateBookingRoom(room_id,booking_room_id, days_change, selected_date)
+                        } else if (current_room_status != "booked" && room_status == "Terbooking") {
+                            // Use create booking endpoint if status changes to booked
+                            viewModelBooking.bookRoom(room_id, days_change, selected_date)
+                        } else {
+                            // Just update room status if not booking
                             viewModelBooking.updateRoomStatus(room_id, statusId)
                         }
                     }
@@ -121,10 +148,16 @@ fun AdminRoomScreenC(
                 onStatusSelected = { status ->
                     room_status = status  // Update selected status di parent
                 },
+                onDateSelected = { date ->
+                    selected_date = date  // Update selected date di parent
+                },
+                onDaysChange = { days ->
+                    days_change = days.toInt()
+                },
                 modifier = modifier
             )
         }
-        // Tampilkan status booking
+
         when (bookingState) {
             is Resource.Loading -> {
                 Column(Modifier.fillMaxWidth()) {
@@ -135,7 +168,6 @@ fun AdminRoomScreenC(
 
             }
             is Resource.Success -> {
-                Column(Modifier.fillMaxWidth()) {
                     scope.launch {
                         snackbarHostState.showSnackbar(
                             message = "Update Status successful",
@@ -143,13 +175,15 @@ fun AdminRoomScreenC(
                         viewModelBooking.resetBookingState()
                         viewModel.fetchRooms(buildingId)
                     }
-                }
+
+
             }
             is Resource.ErrorMessage -> {
                 Text("Error: ${(bookingState as Resource.ErrorMessage).message}")
             }
             else -> {}
         }
+
         when (updateRoomState) {
             is Resource.Loading -> {
                 Column(Modifier.fillMaxWidth()) {
@@ -166,12 +200,65 @@ fun AdminRoomScreenC(
                         message = "Update Status successful",
                         duration = SnackbarDuration.Short)
                     viewModelBooking.resetBookingState()
+                    viewModelBooking.resetUpdateState()
                     viewModel.fetchRooms(buildingId)
                 }
             }
 
             is Resource.ErrorMessage -> {
                 Text("Error: ${(updateRoomState as Resource.ErrorMessage).message}")
+            }
+
+            else -> {}
+        }
+
+        when (bookingRoomState) {
+            is Resource.Loading -> {
+                // Show loading indicator if necessary
+            }
+            is Resource.Success -> {
+                // Handle successful booking room data
+                val bookingData = (bookingRoomState as Resource.Success<BookingRoomResponse>).data
+
+                // Extract booking_room_id from the data
+                booking_room_id = bookingData?.data?.booking_room_id?:0
+            }
+            is Resource.Error -> {
+                // Handle error state (e.g., show a Snackbar or Toast)
+            }
+            is Resource.ErrorMessage -> {
+                // Handle specific error messages
+            }
+            is Resource.Idle -> {
+                // Do nothing, idle state
+            }
+        }
+
+        when (updateBookingRoomState) {
+            is Resource.Loading -> {
+                Column(Modifier.fillMaxWidth()) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = primary
+                    )
+                }
+            }
+
+            is Resource.Success -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Update Status successful",
+                        duration = SnackbarDuration.Short
+                    )
+                    viewModelBooking.resetBookingState()
+                    viewModelBooking.resetUpdateState()
+                    viewModelBooking.resetUpdateBookingState()
+                    viewModel.fetchRooms(buildingId)
+                }
+            }
+
+            is Resource.ErrorMessage -> {
+                Text("Error: ${(updateBookingRoomState as Resource.ErrorMessage).message}")
             }
 
             else -> {}
@@ -208,6 +295,8 @@ fun AdminRoomScreenC(
                 }
             )
         }
+
+
     }
 
 }
@@ -249,99 +338,121 @@ private fun TopBarSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoomSection(
     modifier: Modifier = Modifier,
     viewModel: RoomsViewModel,
     buildingId: Int,
     selectedRoomNumber: String?,
-    onRoomSelected: (String?,Int?) -> Unit
+    onRoomSelected: (String?,Int?,String?) -> Unit
 ) {
 
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
-
+    val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val state = rememberPullToRefreshState()
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        coroutineScope.launch {
+            delay(2000)
+            viewModel.fetchRooms(buildingId)
+            isRefreshing = false
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.fetchRooms(buildingId)
     }
+    PullToRefreshBox(
+        state = state,
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
 
-    when (roomState) {
-        is Resource.Loading -> {
-            CircularProgressIndicator()
-        }
+        ) {
+        when (roomState) {
+            is Resource.Loading -> {
+                Loading()
+            }
 
-        is Resource.Success -> {
-            val rooms = (roomState as Resource.Success<List<Room>>).data
-            if (rooms != null) {
-                if (rooms.isEmpty()) {
-                    Text(text = "No rooms available")
-                } else {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        // LazyColumn untuk ruangan dengan typeId selain 2 dan 3
-                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                            items(rooms.filter {  it.room_type_id != 3 }) { room ->
-                                RoomAdminItemC(
-                                    modifier = Modifier.padding(
-                                        start = 5.dp,
-                                        end = 5.dp,
-                                        top = 5.dp
-                                    ),
-                                    room = room,
-                                    isSelected = selectedRoomNumber == room.room_number,
-                                    onClick = {
-                                        onRoomSelected(
-                                            if (selectedRoomNumber == room.room_number) null else room.room_number,room.room_id
-                                        )
-                                    }
-                                )
-                            }
-                            item{
-                                val filteredRooms = rooms.filter { it.room_type_id == 3 }
+            is Resource.Success -> {
+                val rooms = (roomState as Resource.Success<List<Room>>).data
+                if (rooms != null) {
+                    if (rooms.isEmpty()) {
+                        EmptyItem()
+                    } else {
+                        Column(modifier = Modifier) {
+                            // LazyColumn untuk ruangan dengan typeId selain 2 dan 3
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(rooms.filter { it.room_type_id != 3 }) { room ->
+                                    RoomAdminItemC(
+                                        modifier = Modifier.padding(
+                                            start = 5.dp,
+                                            end = 5.dp,
+                                            top = 5.dp
+                                        ),
+                                        room = room,
+                                        isSelected = selectedRoomNumber == room.room_number,
+                                        onClick = {
+                                            onRoomSelected(
+                                                if (selectedRoomNumber == room.room_number) null else room.room_number,
+                                                room.room_id,
+                                                room.status_name
+                                            )
+                                        }
+                                    )
+                                }
+                                item {
+                                    val filteredRooms = rooms.filter { it.room_type_id == 3 }
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 5.dp)
-                                ) {
-                                    filteredRooms.forEach { room ->
-                                        RoomAdminItemC2(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .padding(horizontal = 5.dp),
-                                            room = room,
-                                            isSelected = selectedRoomNumber == room.room_number,
-                                            onClick = {
-                                                onRoomSelected(
-                                                    if (selectedRoomNumber == room.room_number) null else room.room_number,room.room_id
-                                                )
-                                            }
-                                        )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 5.dp)
+                                    ) {
+                                        filteredRooms.forEach { room ->
+                                            RoomAdminItemC2(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .padding(horizontal = 5.dp),
+                                                room = room,
+                                                isSelected = selectedRoomNumber == room.room_number,
+                                                onClick = {
+                                                    onRoomSelected(
+                                                        if (selectedRoomNumber == room.room_number) null else room.room_number,
+                                                        room.room_id,
+                                                        room.status_name
+                                                    )
+                                                }
+                                            )
+                                        }
                                     }
                                 }
+                                item {
+                                    InfoSection()
+                                }
                             }
-                            item {
-                                InfoSection()
-                            }
+
+
                         }
-
-
                     }
                 }
             }
-        }
 
-        is Resource.ErrorMessage -> {
-            val errorMessage = (roomState as Resource.ErrorMessage).message
-            Text(text = "Error: $errorMessage")
-            Log.e("HomeScreen", "Error: $errorMessage")
-        }
+            is Resource.ErrorMessage -> {
+                val errorMessage = (roomState as Resource.ErrorMessage).message
+                Text(text = "Error: $errorMessage")
+                Log.e("HomeScreen", "Error: $errorMessage")
+            }
 
-        is Resource.Error -> {
-            // Handle error dari Exception
-            val exceptionMessage = (roomState as Resource.Error).exception.message ?: "Unknown error occurred"
-            ErrorItem(errorMsg = exceptionMessage)
-        }
+            is Resource.Error -> {
+                // Handle error dari Exception
+                val exceptionMessage =
+                    (roomState as Resource.Error).exception.message ?: "Unknown error occurred"
+                ErrorItem(errorMsg = exceptionMessage)
+            }
 
-        else -> {}
+            else -> {}
+        }
     }
 }
 

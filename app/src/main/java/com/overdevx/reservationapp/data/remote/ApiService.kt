@@ -2,12 +2,14 @@ package com.overdevx.reservationapp.data.remote
 
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
+import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.BuildingResponse
 import com.overdevx.reservationapp.data.model.HistoryResponse
 import com.overdevx.reservationapp.data.model.LoginRequest
 import com.overdevx.reservationapp.data.model.LoginResponse
 import com.overdevx.reservationapp.data.model.MonitoringResponse
 import com.overdevx.reservationapp.data.model.RoomResponse
+import com.overdevx.reservationapp.data.model.UpdateBookingRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
 import retrofit2.Response
@@ -46,6 +48,16 @@ interface ApiService {
         @Path("id") roomId: Int,
         @Body updateRoomsRequest: UpdateRoomsRequest
     ): Response<UpdateRoomsResponse>
+
+    @Headers("Content-Type: application/json")
+    @PUT("booking-rooms/{id}")
+    suspend fun updateBooking(
+        @Path("id") roomId: Int,
+        @Body updateRoomsRequest: UpdateBookingRequest
+    ): Response<BookingRoomResponse>
+
+    @GET("booking-rooms/room/{id}")
+    suspend fun getBookingRoom(@Path("id") roomId: Int): BookingRoomResponse
 
     @GET("history")
     suspend fun getHistory(): Response<HistoryResponse>

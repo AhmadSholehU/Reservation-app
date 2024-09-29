@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,21 +18,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,24 +49,25 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Building
-import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
-import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.white2
 import com.overdevx.reservationapp.utils.Resource
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -69,66 +77,96 @@ fun HomeScreen(
 ) {
     val buildingState by viewModel.buildingState.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        HeaderSection(buildingViewModel = viewModel, onLogoutClick = {onLogoutClick()})
-        Spacer(modifier = Modifier.height(20.dp))
-        when (buildingState) {
-            is Resource.Loading -> {
-                Column (modifier=Modifier.fillMaxWidth()){
-                    CircularProgressIndicator(
-                        color = primary,
-                        modifier=Modifier.align(Alignment.CenterHorizontally))
-                }
+    val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val state = rememberPullToRefreshState()
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        coroutineScope.launch {
+            delay(2000)
+           viewModel.fetchBuilding()
+            isRefreshing = false
+        }
+    }
 
-            }
+        Column(modifier = modifier.fillMaxSize()) {
+            HeaderSection(buildingViewModel = viewModel, onLogoutClick = { onLogoutClick() })
+            Spacer(modifier = Modifier.height(20.dp))
+            PullToRefreshBox(
+                state = state,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
 
-            is Resource.Success -> {
-                val buildings = (buildingState as Resource.Success<List<Building>>).data
-                if (buildings != null) {
-                    if (buildings.isEmpty()) {
-                        Text(text = "No building available")
-                    } else {
-                        LazyColumn(
-                            modifier = modifier
-                                .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
-                                .background(white)
-                                .padding(10.dp)
-                        ) {
-                            items(buildings, key = {it.building_id}) { building ->
-                                BuildingItem(
-                                    onClick = { onClick(building.building_id,building.name) },
-                                    building = building
-                                )
-                            }
-                        }
+                ) {
+                when (buildingState) {
+                    is Resource.Loading -> {
+                       Loading()
 
                     }
 
+                    is Resource.Success -> {
+                        val buildings = (buildingState as Resource.Success<List<Building>>).data
+                        if (buildings != null) {
+                            if (buildings.isEmpty()) {
+                                Text(text = "No building available")
+                            } else {
+
+                                LazyColumn(
+                                    modifier = modifier
+                                        .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
+                                        .background(white)
+                                        .padding(10.dp)
+                                ) {
+                                    items(buildings, key = { it.building_id }) { building ->
+                                        BuildingItem(
+                                            onClick = {
+                                                onClick(
+                                                    building.building_id,
+                                                    building.name
+                                                )
+                                            },
+                                            building = building
+                                        )
+                                    }
+                                }
+
+                            }
+
+
+                        }
+                    }
+
+                    is Resource.ErrorMessage -> {
+                        val errorMessage = (buildingState as Resource.ErrorMessage).message
+                        Text(text = "Error: $errorMessage")
+                        Log.e("HomeScreen", "Error: $errorMessage")
+                    }
+
+                    is Resource.Error -> {
+
+                        // Handle error dari Exception
+                        val exceptionMessage =
+                            (buildingState as Resource.Error).exception.message
+                                ?: "Unknown error occurred"
+                            ErrorItem(errorMsg = exceptionMessage)
+
+
+
+                    }
+
+
+                    is Resource.Idle -> {
+                        LaunchedEffect(Unit) {
+                            viewModel.fetchBuilding()
+                        }
+                    }
+
+                    else -> {}
+
                 }
             }
-
-            is Resource.ErrorMessage -> {
-                val errorMessage = (buildingState as Resource.ErrorMessage).message
-                Text(text = "Error: $errorMessage")
-                Log.e("HomeScreen", "Error: $errorMessage")
-            }
-
-            is Resource.Error -> {
-                // Handle error dari Exception
-                val exceptionMessage = (buildingState as Resource.Error).exception.message ?: "Unknown error occurred"
-                ErrorItem(errorMsg = exceptionMessage)
-            }
-
-            is Resource.Idle ->{
-                LaunchedEffect(Unit) {
-                    viewModel.fetchBuilding()
-                }
-            }
-
-            else -> {}
         }
 
-    }
 }
 
 @Composable

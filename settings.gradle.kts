@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ReservationApp"
 include(":app")
+include(":app:baselineprofile")

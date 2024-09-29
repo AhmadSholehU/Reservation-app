@@ -24,10 +24,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -35,6 +37,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -44,6 +50,10 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,6 +78,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
+import com.overdevx.reservationapp.data.model.BookingRoom
+import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
 import com.overdevx.reservationapp.ui.theme.gray
@@ -75,9 +87,14 @@ import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.ui.theme.white2
 import com.overdevx.reservationapp.utils.Resource
+import com.overdevx.reservationapp.utils.convertDate
+import com.overdevx.reservationapp.utils.formatDate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AdminRoomScreen(
@@ -92,35 +109,53 @@ fun AdminRoomScreen(
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
 
-    var days by remember { mutableStateOf(0) }
+    var days_change by remember { mutableStateOf(0) }
     var room_id by remember { mutableStateOf(0) }
     var room_status by remember { mutableStateOf("Tersedia") }
+    var selected_date by remember { mutableStateOf("") }
+    var current_room_status by remember { mutableStateOf("") }
+    var booking_room_id by remember { mutableStateOf(0) }
 
     val bookingState by viewModelBooking.bookingState.collectAsStateWithLifecycle()
     val updateRoomState by viewModelBooking.updateRoomState.collectAsStateWithLifecycle()
+    val bookingRoomState by viewModelBooking.getBookingState.collectAsStateWithLifecycle()
+    val updateBookingRoomState by viewModelBooking.updatatebookingState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+
     LaunchedEffect(Unit) {
         viewModel.fetchRooms(buildingId)
     }
+    LaunchedEffect(selectedRoomNumber) {
+        selectedRoomNumber?.let {
+            viewModelBooking.getBookingRoom(room_id ?: return@LaunchedEffect)
+        }
+    }
     Column(modifier = modifier.padding(16.dp)) {
+
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName)
         Spacer(modifier = Modifier.height(10.dp))
         InfoSection(buildingName)
         Spacer(modifier = Modifier.height(10.dp))
         // Bagian RoomSection untuk menampilkan daftar ruangan
+
         RoomSection(
             viewModel = viewModel,
             buildingId = buildingId,
             selectedRoomNumber = selectedRoomNumber,
-            onRoomSelected = { selectedRoom, roomId ->
+            onRoomSelected = { selectedRoom, roomId,roomStatus ->
                 selectedRoomNumber = selectedRoom
+                if (roomStatus != null) {
+                    current_room_status = roomStatus
+                }
                 if (roomId != null) {
                     room_id = roomId
                 }
             }
         )
+
         Spacer(modifier = Modifier.weight(1f))
         // Bagian ButtonSection untuk menampilkan tombol UBAH STATUS
         ButtonSection(
@@ -146,9 +181,15 @@ fun AdminRoomScreen(
                             "Terbooking" -> 3
                             else -> 1
                         }
-                        if (room_status == "Terbooking") {
-                            viewModelBooking.bookRoom(room_id, days)
+                        // Differentiate between update and create booking based on initial and selected statuses
+                        if (current_room_status == "booked" && room_status == "Terbooking") {
+                            // Use update booking endpoint if already booked
+                            viewModelBooking.updateBookingRoom(room_id,booking_room_id, days_change, selected_date)
+                        } else if (current_room_status != "booked" && room_status == "Terbooking") {
+                            // Use create booking endpoint if status changes to booked
+                            viewModelBooking.bookRoom(room_id, days_change, selected_date)
                         } else {
+                            // Just update room status if not booking
                             viewModelBooking.updateRoomStatus(room_id, statusId)
                         }
 
@@ -156,6 +197,12 @@ fun AdminRoomScreen(
                 },
                 onStatusSelected = { status ->
                     room_status = status  // Update selected status di parent
+                },
+                onDateSelected = { date ->
+                    selected_date = date  // Update selected date di parent
+                },
+                onDaysChange = { days ->
+                    days_change = days.toInt()
                 },
                 modifier = modifier
             )
@@ -220,6 +267,59 @@ fun AdminRoomScreen(
             else -> {}
         }
 
+        when (bookingRoomState) {
+            is Resource.Loading -> {
+                // Show loading indicator if necessary
+            }
+            is Resource.Success -> {
+                // Handle successful booking room data
+                val bookingData = (bookingRoomState as Resource.Success<BookingRoomResponse>).data
+
+                // Extract booking_room_id from the data
+                booking_room_id = bookingData?.data?.booking_room_id?:0
+            }
+            is Resource.Error -> {
+                // Handle error state (e.g., show a Snackbar or Toast)
+            }
+            is Resource.ErrorMessage -> {
+                // Handle specific error messages
+            }
+            is Resource.Idle -> {
+                // Do nothing, idle state
+            }
+        }
+
+        when (updateBookingRoomState) {
+            is Resource.Loading -> {
+                Column(Modifier.fillMaxWidth()) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        color = primary
+                    )
+                }
+            }
+
+            is Resource.Success -> {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Update Status successful",
+                        duration = SnackbarDuration.Short
+                    )
+                    viewModelBooking.resetBookingState()
+                    viewModelBooking.resetUpdateState()
+                    viewModelBooking.resetUpdateBookingState()
+                    viewModel.fetchRooms(buildingId)
+                }
+            }
+
+            is Resource.ErrorMessage -> {
+                Text("Error: ${(updateBookingRoomState as Resource.ErrorMessage).message}")
+            }
+
+            else -> {}
+        }
+
+
         Row {
             // Menampilkan Snackbar dengan SnackbarHost
             SnackbarHost(
@@ -228,10 +328,11 @@ fun AdminRoomScreen(
                 snackbar = { snackbarData ->
                     Snackbar(
                         action = {
+
                             Text(
                                 text = "Dismiss",
                                 color = Color.White,
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
                                 fontSize = 12.sp,
                                 modifier = Modifier.clickable {
                                     snackbarData.dismiss()  // Menutup Snackbar saat di klik
@@ -253,7 +354,9 @@ fun AdminRoomScreen(
         }
 
     }
+
 }
+
 
 @Composable
 private fun TopBarSection(
@@ -364,67 +467,90 @@ private fun InfoSection(buildingName: String, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoomSection(
     modifier: Modifier = Modifier,
     viewModel: RoomsViewModel,
     buildingId: Int,
     selectedRoomNumber: String?,
-    onRoomSelected: (String?, Int?) -> Unit
+    onRoomSelected: (String?, Int?,String?) -> Unit
 ) {
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
-
+    val scope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val state = rememberPullToRefreshState()
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        scope.launch {
+            delay(2000)
+            viewModel.fetchRooms(buildingId)
+            isRefreshing = false
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.fetchRooms(buildingId)
     }
+    PullToRefreshBox(
+        state = state,
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
 
-    when (roomState) {
-        is Resource.Loading -> {
-            CircularProgressIndicator()
-        }
+        ) {
+        when (roomState) {
+            is Resource.Loading -> {
+                Loading()
+            }
 
-        is Resource.Success -> {
-            val rooms = (roomState as Resource.Success<List<Room>>).data
-            if (rooms != null) {
-                if (rooms.isEmpty()) {
-                    EmptyItem()
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(100.dp),
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp)
-                    ) {
-                        items(rooms) { room ->
-                            RoomAdminItem(
-                                modifier = Modifier.padding(start = 5.dp, end = 5.dp, top = 20.dp),
-                                room = room,
-                                isSelected = selectedRoomNumber == room.room_number,
-                                onClick = {
-                                    onRoomSelected(
-                                        if (selectedRoomNumber == room.room_number) null else room.room_number,
-                                        room.room_id
-                                    )
-                                }
-                            )
+            is Resource.Success -> {
+                val rooms = (roomState as Resource.Success<List<Room>>).data
+                if (rooms != null) {
+                    if (rooms.isEmpty()) {
+                        EmptyItem()
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(100.dp),
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+                        ) {
+                            items(rooms) { room ->
+                                RoomAdminItem(
+                                    modifier = Modifier.padding(
+                                        start = 5.dp,
+                                        end = 5.dp,
+                                        top = 20.dp
+                                    ),
+                                    room = room,
+                                    isSelected = selectedRoomNumber == room.room_number,
+                                    onClick = {
+                                        onRoomSelected(
+                                            if (selectedRoomNumber == room.room_number) null else room.room_number,
+                                            room.room_id,
+                                            room.status_name
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
+
+            is Resource.ErrorMessage -> {
+                val errorMessage = (roomState as Resource.ErrorMessage).message
+                Text(text = "Error: $errorMessage")
+                Log.e("HomeScreen", "Error: $errorMessage")
+            }
+
+            is Resource.Error -> {
+                // Handle error dari Exception
+                val exceptionMessage =
+                    (roomState as Resource.Error).exception.message ?: "Unknown error occurred"
+                ErrorItem(errorMsg = exceptionMessage)
+            }
+
+            else -> {}
         }
 
-        is Resource.ErrorMessage -> {
-            val errorMessage = (roomState as Resource.ErrorMessage).message
-            Text(text = "Error: $errorMessage")
-            Log.e("HomeScreen", "Error: $errorMessage")
-        }
-
-        is Resource.Error -> {
-            // Handle error dari Exception
-            val exceptionMessage =
-                (roomState as Resource.Error).exception.message ?: "Unknown error occurred"
-            ErrorItem(errorMsg = exceptionMessage)
-        }
-
-        else -> {}
     }
 }
 
@@ -533,12 +659,16 @@ fun StatusDialog(
     buildingName: String,
     onBooking: () -> Unit,
     onStatusSelected: (String) -> Unit,
+    onDateSelected: (String) -> Unit,
+    onDaysChange: (String) -> Unit,
     modifier: Modifier
 ) {
     // State untuk menyimpan status dan waktu penyewaan yang dipilih
     var selectedStatus by remember { mutableStateOf("") }
     var rentalDuration by remember { mutableStateOf("1") }
 
+    var showModal by remember { mutableStateOf(false) }
+    var selectedDate by remember { mutableStateOf("Select date of birth") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -555,7 +685,6 @@ fun StatusDialog(
 
         },
         text = {
-
             Column(Modifier.fillMaxWidth()) {
                 Text(
                     text = "Status",
@@ -600,7 +729,10 @@ fun StatusDialog(
                     ) {
                         BasicTextField(
                             value = rentalDuration,
-                            onValueChange = { rentalDuration = it },
+                            onValueChange = {
+                                rentalDuration = it
+
+                            },
                             modifier = Modifier
                                 .size(50.dp)
                                 .border(
@@ -633,12 +765,14 @@ fun StatusDialog(
                                 innerTextField() // Menampilkan konten dari BasicTextField
                             }
                         }
+
                         Spacer(modifier = Modifier.width(5.dp))
                         Column(modifier = Modifier) {
                             IconButton(
                                 onClick = {
                                     rentalDuration =
                                         (rentalDuration.toIntOrNull() ?: 2).plus(1).toString()
+                                    onDaysChange(rentalDuration)
                                 },
                                 modifier = Modifier.size(30.dp)
                             ) {
@@ -666,8 +800,54 @@ fun StatusDialog(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Row(
+                        modifier = Modifier
+
+                            .fillMaxWidth()
+                            .height(55.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(secondary)
+                            .padding(5.dp)
+                    )
+                    {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_calendar),
+                            contentDescription = null,
+                            tint = white,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.CenterVertically)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = selectedDate,
+                            color = if (selectedDate == null) white2 else white,
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .clickable { showModal = true },
+
+                            )
+                    }
 
                 }
+
+                if (showModal) {
+                    DatePickerModal(
+                        onDateSelected = {
+                            if (it != null) {
+                                selectedDate = convertDate(it)
+                                onDateSelected(selectedDate)
+                            }
+                            showModal = false
+                        },
+                        onDismiss = { showModal = false }
+                    )
+                }
+
             }
         },
         confirmButton = {
@@ -717,7 +897,6 @@ fun StatusDialog(
 
 }
 
-
 @Composable
 fun StatusButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Button(
@@ -751,7 +930,11 @@ fun StatusButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 @Composable
 fun EmptyItem(modifier: Modifier = Modifier) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
         Image(
             painter = painterResource(id = R.drawable.ic_empty),
             contentDescription = null,
@@ -773,7 +956,11 @@ fun EmptyItem(modifier: Modifier = Modifier) {
 
 @Composable
 fun ErrorItem(errorMsg: String, modifier: Modifier = Modifier) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
         Image(
             painter = painterResource(id = R.drawable.ic_error),
             contentDescription = null,
@@ -839,6 +1026,83 @@ fun Access(onLoginClick: () -> Unit, modifier: Modifier = Modifier) {
             }
         }
 
+    }
+}
+
+@Composable
+fun Loading() {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CircularProgressIndicator(
+            color = primary,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Loading Data",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+            fontSize = 20.sp,
+            color = secondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerModal(
+    onDateSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState()
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onDateSelected(datePickerState.selectedDateMillis)
+                onDismiss()
+            }) {
+                Text(
+                    text = "OK", color = primary,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "Cancel",
+                    color = white,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                )
+            }
+        },
+        colors = DatePickerDefaults.colors(
+            containerColor = secondary,
+        )
+    ) {
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                todayDateBorderColor = primary,
+                headlineContentColor = secondary,
+                titleContentColor = secondary,
+                currentYearContentColor = secondary,
+                selectedDayContentColor = white,
+                todayContentColor = primary,
+                dividerColor = primary,
+                dayContentColor = secondary,
+                weekdayContentColor = primary,
+                navigationContentColor = secondary,
+                selectedYearContentColor = secondary,
+                selectedYearContainerColor = primary,
+                selectedDayContainerColor = primary,
+                yearContentColor = secondary
+            )
+        )
     }
 }
 

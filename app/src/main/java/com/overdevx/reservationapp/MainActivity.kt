@@ -6,11 +6,19 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
@@ -183,7 +191,27 @@ class MainActivity : ComponentActivity() {
                         },
                     )
                 }
-                composable<RoomsRouteAdmin> {
+                composable<RoomsRouteAdmin>(
+                    enterTransition = {
+                    fadeIn(
+                        animationSpec = tween(
+                            500, easing = LinearEasing
+                        )
+                    ) + slideIntoContainer(
+                        animationSpec = tween(500, easing = EaseIn),
+                        towards = AnimatedContentTransitionScope.SlideDirection.Start
+                    )
+                },
+                    exitTransition = {
+                        fadeOut(
+                            animationSpec = tween(
+                                500, easing = LinearEasing
+                            )
+                        ) + slideOutOfContainer(
+                            animationSpec = tween(500, easing = EaseOut),
+                            towards = AnimatedContentTransitionScope.SlideDirection.End
+                        )
+                    }) {
                     val args = it.toRoute<RoomsRouteAdmin>()
                     val buildingId = args.id
                     val buildingName = args.name
@@ -197,7 +225,26 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                composable<RoomsRouteAdminC> {
+                composable<RoomsRouteAdminC>( enterTransition = {
+                    fadeIn(
+                        animationSpec = tween(
+                            500, easing = LinearEasing
+                        )
+                    ) + slideIntoContainer(
+                        animationSpec = tween(500, easing = EaseIn),
+                        towards = AnimatedContentTransitionScope.SlideDirection.Start
+                    )
+                },
+                    exitTransition = {
+                        fadeOut(
+                            animationSpec = tween(
+                                500, easing = LinearEasing
+                            )
+                        ) + slideOutOfContainer(
+                            animationSpec = tween(500, easing = EaseOut),
+                            towards = AnimatedContentTransitionScope.SlideDirection.End
+                        )
+                    }) {
                     val args = it.toRoute<RoomsRouteAdminC>()
                     val buildingId = args.id
                     val buildingName = args.name
@@ -230,11 +277,11 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        BottomAppBar(
+        NavigationBar(
             containerColor = secondary,
             contentColor = white,
             modifier = Modifier
-                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
         ) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination

@@ -11,3 +11,9 @@ fun formatDate(dateString: String): String {
     val formatter = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
     return formatter.format(parser.parse(dateString) ?: Date())
 }
+
+fun convertDate(selectedDate: Long): String {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val date = Date(selectedDate)
+    return dateFormat.format(date)
+}

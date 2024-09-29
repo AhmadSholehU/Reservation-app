@@ -18,16 +18,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +52,7 @@ import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
@@ -54,7 +62,10 @@ import com.overdevx.reservationapp.ui.theme.white2
 import com.overdevx.reservationapp.ui.theme.yellow
 import com.overdevx.reservationapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonitoringScreen(
     modifier: Modifier = Modifier,
@@ -65,6 +76,17 @@ fun MonitoringScreen(
     val roomState by viewModel.monitoringState.collectAsStateWithLifecycle()
     val roomCount by viewModel.roomCounts.collectAsStateWithLifecycle()
 
+    val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val state = rememberPullToRefreshState()
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        coroutineScope.launch {
+            delay(2000)
+            viewModel.fetchMonitoring()
+            isRefreshing = false
+        }
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -72,111 +94,122 @@ fun MonitoringScreen(
         Spacer(modifier = Modifier.height(10.dp))
         TopBarSection()
         Spacer(modifier = Modifier.height(10.dp))
-        LazyColumn {
-            item {
-                Spacer(modifier = Modifier.height(10.dp))
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(elevation = 5.dp, shape = RoundedCornerShape(16.dp))
-                        .background(white, shape = RoundedCornerShape(16.dp))
-                        .padding(10.dp)
-                ) {
-                    when (roomState) {
-                        is Resource.Loading -> {
-                            CircularProgressIndicator()
-                        }
+        PullToRefreshBox(
+            state = state,
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
 
-                        is Resource.ErrorMessage -> {
-                            val errorMessage = (roomState as Resource.ErrorMessage).message
-                            Log.e("MONITORING", errorMessage)
-                            Text(text = "Error: $errorMessage")
-                        }
+            ) {
+            LazyColumn {
+                item {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(elevation = 5.dp, shape = RoundedCornerShape(16.dp))
+                            .background(white, shape = RoundedCornerShape(16.dp))
+                            .padding(10.dp)
+                    ) {
 
-                        is Resource.Success -> {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                roomCount
-                                    .filter { it.building_name != "Gedung C" }
-                                    .forEach { building ->
-                                        GedungSection(
-                                            modifier = Modifier.weight(1f),
-                                            availble = building.room_status.available.count
-                                                ?: 0,        // Nilai default 0
-                                            notAvailble = building.room_status.not_available.count
-                                                ?: 0, // Nilai default 0
-                                            booked = building.room_status.booked.count
-                                                ?: 0,             // Nilai default 0
-                                            buildingName = building.building_name
-                                                ?: "Unknown Building",  // Nilai default "Unknown Building"
-                                            onClick = {
-                                                onClick(
-                                                    building.building_id ?: 0
-                                                )
-                                            }             // Nilai default 0
-                                        )
-
-                                    }
-
-
+                        when (roomState) {
+                            is Resource.Loading -> {
+                                Loading()
                             }
-                            val gedungC = roomCount.find { it.building_name == "Gedung C" }
-                            gedungC?.let { building ->
-                                KelasSection(
+
+                            is Resource.ErrorMessage -> {
+                                val errorMessage = (roomState as Resource.ErrorMessage).message
+                                Log.e("MONITORING", errorMessage)
+                                Text(text = "Error: $errorMessage")
+                            }
+
+                            is Resource.Success -> {
+                                Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(start = 10.dp, end = 10.dp),
-                                    viewModel = viewModel
-                                )
-                            }
-
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                roomCount.filter { it.building_name == "Gedung C" }
-                                    .forEach { building ->
-                                        val filteredRooms = building.rooms.filterNot {
-                                            it.room_type == "ruang"
-                                        }
-                                        filteredRooms.forEach { room ->
-                                            TransitSection(
+                                        .padding(10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    roomCount
+                                        .filter { it.building_name != "Gedung C" }
+                                        .forEach { building ->
+                                            GedungSection(
                                                 modifier = Modifier.weight(1f),
-                                                room_name = room.room_name,
-                                                room_status = room.room_status,
+                                                availble = building.room_status.available.count
+                                                    ?: 0,        // Nilai default 0
+                                                notAvailble = building.room_status.not_available.count
+                                                    ?: 0, // Nilai default 0
+                                                booked = building.room_status.booked.count
+                                                    ?: 0,             // Nilai default 0
+                                                buildingName = building.building_name
+                                                    ?: "Unknown Building",  // Nilai default "Unknown Building"
+                                                onClick = {
+                                                    onClick(
+                                                        building.building_id ?: 0
+                                                    )
+                                                }             // Nilai default 0
                                             )
+
                                         }
-                                    }
 
+
+                                }
+                                val gedungC = roomCount.find { it.building_name == "Gedung C" }
+                                gedungC?.let { building ->
+                                    KelasSection(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 10.dp, end = 10.dp),
+                                        viewModel = viewModel
+                                    )
+                                }
+
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    roomCount.filter { it.building_name == "Gedung C" }
+                                        .forEach { building ->
+                                            val filteredRooms = building.rooms.filterNot {
+                                                it.room_type == "ruang"
+                                            }
+                                            filteredRooms.forEach { room ->
+                                                TransitSection(
+                                                    modifier = Modifier.weight(1f),
+                                                    room_name = room.room_name,
+                                                    room_status = room.room_status,
+                                                )
+                                            }
+                                        }
+
+                                }
                             }
-                        }
 
-                        is Resource.Error -> {
-                            // Handle error dari Exception
-                            val exceptionMessage = (roomState as Resource.Error).exception.message ?: "Unknown error occurred"
-                            ErrorItem(errorMsg = exceptionMessage)
-                        }
-
-                        is Resource.Idle -> {
-                            LaunchedEffect(Unit) {
-                                viewModel.fetchMonitoring()
+                            is Resource.Error -> {
+                                // Handle error dari Exception
+                                val exceptionMessage =
+                                    (roomState as Resource.Error).exception.message
+                                        ?: "Unknown error occurred"
+                                ErrorItem(errorMsg = exceptionMessage)
                             }
-                        }
 
-                        else -> {}
+                            is Resource.Idle -> {
+                                LaunchedEffect(Unit) {
+                                    viewModel.fetchMonitoring()
+                                }
+                            }
+
+                            else -> {}
+                        }
                     }
 
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-            }
 
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+            }
         }
 
     }
@@ -186,7 +219,8 @@ private fun TopBarSection(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth()
+        Column(modifier = Modifier
+            .fillMaxWidth()
             .align(Alignment.Center)) {
             Text(
                 text = "Monitoring Ruang",

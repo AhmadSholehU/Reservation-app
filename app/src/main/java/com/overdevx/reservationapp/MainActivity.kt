@@ -13,6 +13,8 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
@@ -98,7 +100,6 @@ class MainActivity : ComponentActivity() {
                 }
             },
 
-
             ) { innerPadding ->
             // Cek apakah token sudah ada
             val token = tokenProvider.getToken()
@@ -110,7 +111,11 @@ class MainActivity : ComponentActivity() {
             NavHost(
                 modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                 navController = navController,
-                startDestination = startDestination
+                startDestination = startDestination,
+                enterTransition = { slideInHorizontally { it } },
+                exitTransition = { slideOutHorizontally { -it } },
+                popEnterTransition = { slideInHorizontally { -it } },
+                popExitTransition = { slideOutHorizontally { it } }
             ) {
                 composable<LoginRoute> {
                     LoginScreen(
@@ -137,7 +142,7 @@ class MainActivity : ComponentActivity() {
                     } else {
                         HomeScreen(
                             modifier = Modifier.padding(
-                                end = 16.dp, start = 16.dp
+                                end = 16.dp, start = 16.dp, bottom = innerPadding.calculateBottomPadding()
                             ),
                             onClick = { buildingId, buildingName ->
                                 if (buildingId == 3) {

@@ -196,9 +196,7 @@ fun MonitoringScreen(
                             }
 
                             is Resource.Idle -> {
-                                LaunchedEffect(Unit) {
-                                    viewModel.fetchMonitoring()
-                                }
+
                             }
 
                             else -> {}
@@ -214,6 +212,7 @@ fun MonitoringScreen(
 
     }
 }
+
 @Composable
 private fun TopBarSection(
     modifier: Modifier = Modifier
@@ -236,6 +235,7 @@ private fun TopBarSection(
 
     }
 }
+
 @Composable
 private fun GedungSection(
     modifier: Modifier = Modifier,

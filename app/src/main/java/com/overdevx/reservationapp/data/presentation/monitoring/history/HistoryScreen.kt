@@ -103,7 +103,7 @@ fun HistoryScreen(
                     val bookingHistoryList = (historyState as Resource.Success<List<History>>).data
                     Log.d("HomeScreen", "Booking History List: $bookingHistoryList")
                     val groupedData =
-                        bookingHistoryList?.groupBy { formatDate(it.detail.Booking.booking_date) }
+                        bookingHistoryList?.groupBy { formatDate(it.date) }
                     Log.d("HomeScreen", "Grouped Data: $groupedData")
                     LazyColumn(
                         modifier = Modifier
@@ -124,7 +124,7 @@ fun HistoryScreen(
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
-                            items(bookings, key = { it.booking_id }) { booking ->
+                            items(bookings, key = { it.booking_room_id }) { booking ->
                                 BookingItem(booking)
                             }
                         }
@@ -147,9 +147,7 @@ fun HistoryScreen(
                 }
 
                 is Resource.Idle -> {
-                    LaunchedEffect(Unit) {
-                        historyViewModel.fetchHistory()
-                    }
+
                 }
 
                 else -> {}
@@ -170,13 +168,13 @@ fun BookingItem(history: History) {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = history.detail.Building.name,
+                text = history.Room.Building.name,
                 color = white,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
             Text(
-                text = "Ruang ${history.detail.room_number}",
+                text = "Ruang ${history.Room.room_number}",
                 color = white2,
                 fontSize = 12.sp
             )

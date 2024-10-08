@@ -6,6 +6,7 @@ import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.repository.MonitoringRepository
 import com.overdevx.reservationapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -23,8 +24,12 @@ class MonitoringViewModel @Inject constructor(
     private val _roomCounts = MutableStateFlow<List<Monitoring>>(emptyList())
     val roomCounts: StateFlow<List<Monitoring>> = _roomCounts
 
+    init {
+        fetchMonitoring()
+    }
     fun fetchMonitoring() {
         viewModelScope.launch {
+            delay(1000)
             _monitoringState.value = Resource.Loading
             val result = repository.getMonitoring()
             _monitoringState.value = result

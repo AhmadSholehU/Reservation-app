@@ -51,8 +51,8 @@ interface ApiService {
 
     @Headers("Content-Type: application/json")
     @PUT("booking-rooms/{id}")
-    suspend fun updateBooking(
-        @Path("id") roomId: Int,
+    suspend fun  updateBooking(
+        @Path("id") bookingRoomId: Int,
         @Body updateRoomsRequest: UpdateBookingRequest
     ): Response<BookingRoomResponse>
 

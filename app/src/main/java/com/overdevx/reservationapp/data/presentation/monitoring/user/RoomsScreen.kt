@@ -49,6 +49,7 @@ import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.utils.Resource
+import kotlinx.coroutines.delay
 
 @Composable
 fun RoomsScreen(
@@ -56,9 +57,7 @@ fun RoomsScreen(
     buildingId: Int,
     onNavigateBack: () -> Unit,
     viewModel: RoomsViewModel = hiltViewModel(),
-
 ) {
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -168,8 +167,9 @@ private fun InfoSection(modifier: Modifier = Modifier) {
 @Composable
 private fun RoomSection(modifier: Modifier = Modifier,viewModel: RoomsViewModel,buildingId:Int) {
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) {
-      viewModel.fetchRooms(buildingId)
+    LaunchedEffect(buildingId) {
+        delay(500)
+        viewModel.fetchRooms(buildingId)
     }
     when(roomState){
         is Resource.Loading ->{

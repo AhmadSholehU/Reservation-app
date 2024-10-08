@@ -79,10 +79,10 @@ class BookingRespository @Inject constructor(
     }
 
 
-    suspend fun updateBookingRoom(roomId: Int,bookingRoomId:Int,days: Int,date:String):Resource<BookingRoomResponse>{
+    suspend fun updateBookingRoom(bookingRoomId:Int,days: Int,date:String):Resource<BookingRoomResponse>{
         return try {
-            val request = UpdateBookingRequest(bookingRoomId,days,date)
-            val response = authenticateApiService.updateBooking(roomId, request)
+            val request = UpdateBookingRequest(days,date)
+            val response = authenticateApiService.updateBooking(bookingRoomId, request)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {

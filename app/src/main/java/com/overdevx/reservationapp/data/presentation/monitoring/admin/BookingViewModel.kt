@@ -12,6 +12,7 @@ import com.overdevx.reservationapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -37,6 +38,7 @@ class BookingViewModel @Inject constructor(
     private val _getBookingRoomState = MutableStateFlow<Resource<BookingRoomResponse>>(Resource.Idle)
     val getBookingState: StateFlow<Resource<BookingRoomResponse>> = _getBookingRoomState
 
+
     fun bookRoom(roomId: Int, days: Int,date:String) {
         viewModelScope.launch {
             _bookingState.value = Resource.Loading
@@ -61,10 +63,10 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    fun updateBookingRoom(roomId: Int,bookingRoomId:Int,days: Int,date:String){
+    fun updateBookingRoom(bookingRoomId:Int,days: Int,date:String){
         viewModelScope.launch {
             _updatatebookingState.value=Resource.Loading
-            val result=bookingRepository.updateBookingRoom(roomId,bookingRoomId,days,date)
+            val result=bookingRepository.updateBookingRoom(bookingRoomId,days,date)
             _updatatebookingState.value=result
         }
     }

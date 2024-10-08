@@ -101,7 +101,6 @@ fun HomeScreen(
                 when (buildingState) {
                     is Resource.Loading -> {
                        Loading()
-
                     }
 
                     is Resource.Success -> {
@@ -110,7 +109,6 @@ fun HomeScreen(
                             if (buildings.isEmpty()) {
                                 Text(text = "No building available")
                             } else {
-
                                 LazyColumn(
                                     modifier = modifier
                                         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
@@ -156,9 +154,9 @@ fun HomeScreen(
 
 
                     is Resource.Idle -> {
-                        LaunchedEffect(Unit) {
-                            viewModel.fetchBuilding()
-                        }
+//                        LaunchedEffect(Unit) {
+//                            viewModel.fetchBuilding()
+//                        }
                     }
 
                     else -> {}
@@ -309,22 +307,6 @@ fun HeaderSection(
             }
 
         }
-    }
-}
-
-@Composable
-fun ContentSection(viewModel: BuildingViewModel, modifier: Modifier = Modifier) {
-
-    Column(
-        modifier = modifier
-            .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
-            .background(gray2)
-            .padding(10.dp)
-
-
-    ) {
-
-
     }
 }
 

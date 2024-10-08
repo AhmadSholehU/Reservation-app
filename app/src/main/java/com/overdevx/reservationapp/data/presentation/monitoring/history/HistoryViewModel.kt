@@ -7,6 +7,7 @@ import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.repository.HistoryRepository
 import com.overdevx.reservationapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,8 +20,12 @@ class HistoryViewModel @Inject constructor(
     private val _historyState = MutableStateFlow<Resource<List<History>>>(Resource.Idle)
     val historyState: StateFlow<Resource<List<History>>> = _historyState
 
+    init {
+        fetchHistory()
+    }
     fun fetchHistory() {
         viewModelScope.launch {
+            delay(1000)
             _historyState.value = Resource.Loading
             val result = repository.getMonitoring()
             _historyState.value = result

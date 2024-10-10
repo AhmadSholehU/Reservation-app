@@ -196,27 +196,7 @@ class MainActivity : ComponentActivity() {
                         },
                     )
                 }
-                composable<RoomsRouteAdmin>(
-                    enterTransition = {
-                    fadeIn(
-                        animationSpec = tween(
-                            500, easing = LinearEasing
-                        )
-                    ) + slideIntoContainer(
-                        animationSpec = tween(500, easing = EaseIn),
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start
-                    )
-                },
-                    exitTransition = {
-                        fadeOut(
-                            animationSpec = tween(
-                                500, easing = LinearEasing
-                            )
-                        ) + slideOutOfContainer(
-                            animationSpec = tween(500, easing = EaseOut),
-                            towards = AnimatedContentTransitionScope.SlideDirection.End
-                        )
-                    }) {
+                composable<RoomsRouteAdmin> {
                     val args = it.toRoute<RoomsRouteAdmin>()
                     val buildingId = args.id
                     val buildingName = args.name
@@ -230,26 +210,8 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                composable<RoomsRouteAdminC>( enterTransition = {
-                    fadeIn(
-                        animationSpec = tween(
-                            500, easing = LinearEasing
-                        )
-                    ) + slideIntoContainer(
-                        animationSpec = tween(500, easing = EaseIn),
-                        towards = AnimatedContentTransitionScope.SlideDirection.Start
-                    )
-                },
-                    exitTransition = {
-                        fadeOut(
-                            animationSpec = tween(
-                                500, easing = LinearEasing
-                            )
-                        ) + slideOutOfContainer(
-                            animationSpec = tween(500, easing = EaseOut),
-                            towards = AnimatedContentTransitionScope.SlideDirection.End
-                        )
-                    }) {
+                composable<RoomsRouteAdminC>
+                {
                     val args = it.toRoute<RoomsRouteAdminC>()
                     val buildingId = args.id
                     val buildingName = args.name
@@ -376,28 +338,28 @@ sealed class BottomScreens<T>(
     @Serializable
     data object Home : BottomScreens<HomeRoute>(
         name = "Control",
-        icon = R.drawable.ic_control,
+        icon = R.drawable.ic_settings_outline,
         route = HomeRoute,
-        selectedIconResId = R.drawable.ic_control,
-        unselectedIconResId = R.drawable.ic_control
+        selectedIconResId = R.drawable.ic_settings_filled,
+        unselectedIconResId = R.drawable.ic_settings_outline
     )
 
     @Serializable
     data object Monitoring : BottomScreens<MonitoringRoute>(
         name = "Monitoring",
-        icon = R.drawable.ic_monitoring,
+        icon = R.drawable.ic_analytics_outline,
         route = MonitoringRoute,
-        selectedIconResId = R.drawable.ic_monitoring,
-        unselectedIconResId = R.drawable.ic_monitoring
+        selectedIconResId = R.drawable.ic_analytics_filled,
+        unselectedIconResId = R.drawable.ic_analytics_outline
     )
 
     @Serializable
     data object History : BottomScreens<HistoryRoute>(
         name = "History",
-        icon = R.drawable.ic_history,
+        icon = R.drawable.ic_history_outline,
         route = HistoryRoute,
-        selectedIconResId = R.drawable.ic_history,
-        unselectedIconResId = R.drawable.ic_history
+        selectedIconResId = R.drawable.ic_history_filled,
+        unselectedIconResId = R.drawable.ic_history_outline
     )
 
 

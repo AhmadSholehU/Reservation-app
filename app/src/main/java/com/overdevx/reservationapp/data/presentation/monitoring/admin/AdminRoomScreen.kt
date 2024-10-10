@@ -2,6 +2,11 @@ package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -55,6 +61,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +69,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -75,6 +85,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.placeholder.PlaceholderHighlight
+import com.google.accompanist.placeholder.material.shimmer
+import com.google.accompanist.placeholder.placeholder
+import com.google.accompanist.placeholder.shimmer
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.Room
@@ -122,7 +136,6 @@ fun AdminRoomScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(buildingId) {
-        delay(500)
         viewModel.fetchRooms(buildingId)
     }
     LaunchedEffect(selectedRoomNumber) {
@@ -493,8 +506,9 @@ private fun RoomSection(
             modifier = Modifier.weight(1f)
         ) {
             when (roomState) {
+
                 is Resource.Loading -> {
-                    Loading()
+                    TutorialShimmerEffect()
                 }
 
                 is Resource.Success -> {
@@ -505,14 +519,12 @@ private fun RoomSection(
                         } else {
                             LazyVerticalGrid(
                                 columns = GridCells.Adaptive(100.dp),
-                                modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+                                modifier = Modifier.padding(horizontal = 16.dp)
                             ) {
-                                items(rooms) { room ->
+                                items(rooms,key = {it.room_id}) { room ->
                                     RoomAdminItem(
                                         modifier = Modifier.padding(
-                                            start = 5.dp,
-                                            end = 5.dp,
-                                            top = 20.dp
+                                           5.dp
                                         ),
                                         room = room,
                                         isSelected = selectedRoomNumber == room.room_number,
@@ -619,6 +631,60 @@ private fun RoomAdminItem(
 }
 
 @Composable
+fun TutorialShimmerEffect() {
+    fun Modifier.shimmerEffect(): Modifier = composed {
+        val colors = listOf(
+            Color.LightGray.copy(alpha = 0.6f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.6f),
+        )
+        val transition = rememberInfiniteTransition(label = "shimmer")
+        val shimmerAnimation = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
+            label = "shimmer"
+        )
+        background(
+            Brush.linearGradient(
+                colors = colors,
+                start = Offset.Zero,
+                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
+            )
+        )
+    }
+
+    Box(
+        Modifier
+            .border(2.dp, Color.Black)
+            .fillMaxWidth()
+            .shimmerEffect()
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(15.dp)
+        ) {
+            Box(
+                Modifier
+                    .size(100.dp)
+                    .padding(10.dp)
+                    .shimmerEffect()
+            )
+            Column(Modifier.padding(top = 15.dp)) {
+                Box(modifier = Modifier
+                    .size(height = 20.dp, width = 150.dp)
+                    .shimmerEffect())
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(modifier = Modifier
+                    .size(height = 15.dp, width = 80.dp)
+                    .shimmerEffect())
+            }
+        }
+    }
+}
+
+@Composable
 fun ButtonSection(
     modifier: Modifier = Modifier,
     selectedRoom: String?,
@@ -659,6 +725,36 @@ fun ButtonSection(
             }
         }
     }
+}
+
+@Composable
+fun RoomSkeletonGrid() {
+    LazyColumn(
+        modifier = Modifier.padding(horizontal = 16.dp)
+    ) {
+        // Jumlah item skeleton untuk loading state
+        items(10) {
+            TutorialShimmerEffect()
+        }
+    }
+}
+
+@Composable
+fun RoomSkeletonItem() {
+    Box(
+        modifier = Modifier
+            .size(100.dp)
+            .padding(10.dp)
+            .placeholder(
+                visible = true, // selalu true selama loading
+                color = Color.LightGray,
+                shape = RoundedCornerShape(8.dp),
+                highlight = PlaceholderHighlight.shimmer(
+                    highlightColor = white
+                )
+            )
+            .clip(RoundedCornerShape(10.dp))
+    )
 }
 
 @Composable

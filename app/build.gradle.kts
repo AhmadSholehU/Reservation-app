@@ -124,5 +124,10 @@ dependencies {
     // system UI Controller
     implementation(libs.accompanist.systemuicontroller)
 
+    //shimmer
+    implementation (libs.google.accompanist.placeholder.material)
+
+
+
 
 }

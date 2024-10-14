@@ -485,7 +485,6 @@ private fun RoomSection(
     onRoomSelected: (String?, Int?,String?) -> Unit,
     showDialog: (Boolean) -> Unit,
 ) {
-
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
@@ -506,9 +505,9 @@ private fun RoomSection(
             modifier = Modifier.weight(1f)
         ) {
             when (roomState) {
-
                 is Resource.Loading -> {
                     TutorialShimmerEffect()
+                    //RoomSkeletonGrid()
                 }
 
                 is Resource.Success -> {
@@ -592,7 +591,6 @@ private fun RoomAdminItem(
 
     // Warna latar belakang tergantung apakah item sedang dipilih atau tidak
     val backgroundColor = if (isSelected) secondary else color
-
     Row(
         modifier = modifier
             .size(100.dp)
@@ -653,25 +651,13 @@ fun TutorialShimmerEffect() {
             )
         )
     }
-
-    Box(
+    Row(
         Modifier
-            .border(2.dp, Color.Black)
-            .fillMaxWidth()
+            .fillMaxSize()
+            .background(white)
             .shimmerEffect()
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(15.dp)
-        ) {
-            Box(
-                Modifier
-                    .size(100.dp)
-                    .padding(10.dp)
-                    .shimmerEffect()
-            )
-            Column(Modifier.padding(top = 15.dp)) {
+            Column(Modifier.padding(10.dp)) {
                 Box(modifier = Modifier
                     .size(height = 20.dp, width = 150.dp)
                     .shimmerEffect())
@@ -682,7 +668,8 @@ fun TutorialShimmerEffect() {
             }
         }
     }
-}
+
+
 
 @Composable
 fun ButtonSection(
@@ -690,7 +677,6 @@ fun ButtonSection(
     selectedRoom: String?,
     showDialog: (Boolean) -> Unit,
     onShowDialog: () -> Unit,
-
     ) {
     Spacer(modifier = Modifier.height(16.dp))
     Column(modifier = modifier.fillMaxWidth()) {

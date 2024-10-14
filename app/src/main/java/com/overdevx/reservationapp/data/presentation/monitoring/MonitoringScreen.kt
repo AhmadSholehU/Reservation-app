@@ -72,7 +72,7 @@ fun MonitoringScreen(
     viewModel: MonitoringViewModel = hiltViewModel(),
     onClick: (Int) -> Unit,
 
-) {
+    ) {
     val roomState by viewModel.monitoringState.collectAsStateWithLifecycle()
     val roomCount by viewModel.roomCounts.collectAsStateWithLifecycle()
 
@@ -100,29 +100,34 @@ fun MonitoringScreen(
             onRefresh = onRefresh,
 
             ) {
-            LazyColumn {
-                item {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(elevation = 5.dp, shape = RoundedCornerShape(16.dp))
-                            .background(white, shape = RoundedCornerShape(16.dp))
-                            .padding(10.dp)
+
+            Spacer(modifier = Modifier.height(10.dp))
+            when (roomState) {
+                is Resource.Loading -> {
+                    Loading()
+                }
+
+                is Resource.ErrorMessage -> {
+                    val errorMessage = (roomState as Resource.ErrorMessage).message
+                    Log.e("MONITORING", errorMessage)
+                    Text(text = "Error: $errorMessage")
+                }
+
+                is Resource.Success -> {
+                    LazyColumn(
+
                     ) {
-
-                        when (roomState) {
-                            is Resource.Loading -> {
-                                Loading()
-                            }
-
-                            is Resource.ErrorMessage -> {
-                                val errorMessage = (roomState as Resource.ErrorMessage).message
-                                Log.e("MONITORING", errorMessage)
-                                Text(text = "Error: $errorMessage")
-                            }
-
-                            is Resource.Success -> {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(
+                                        elevation = 5.dp,
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .background(white, shape = RoundedCornerShape(16.dp))
+                                    .padding(10.dp)
+                            ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -150,10 +155,9 @@ fun MonitoringScreen(
                                             )
 
                                         }
-
-
                                 }
-                                val gedungC = roomCount.find { it.building_name == "Gedung C" }
+                                val gedungC =
+                                    roomCount.find { it.building_name == "Gedung C" }
                                 gedungC?.let { building ->
                                     KelasSection(
                                         modifier = Modifier
@@ -186,41 +190,53 @@ fun MonitoringScreen(
 
                                 }
                             }
-
-                            is Resource.Error -> {
-                                // Handle error dari Exception
-                                val exceptionMessage =
-                                    (roomState as Resource.Error).exception.message
-                                        ?: "Unknown error occurred"
-                                ErrorItem(errorMsg = exceptionMessage)
-                            }
-
-                            is Resource.Idle -> {
-
-                            }
-
-                            else -> {}
                         }
                     }
-
-
-                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
+                is Resource.Error -> {
+                    // Handle error dari Exception
+                    val exceptionMessage =
+                        (roomState as Resource.Error).exception.message
+                            ?: "Unknown error occurred"
+                    ErrorItem(errorMsg = exceptionMessage)
+                }
+
+                is Resource.Idle -> {
+
+                }
+
+                else -> {}
             }
+//                    Column(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .shadow(elevation = 5.dp, shape = RoundedCornerShape(16.dp))
+//                            .background(white, shape = RoundedCornerShape(16.dp))
+//                            .padding(10.dp)
+//                    ) {
+//
+//
+//                    }
+
+
+            Spacer(modifier = Modifier.height(10.dp))
         }
 
     }
 }
+
 
 @Composable
 private fun TopBarSection(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .align(Alignment.Center)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center)
+        ) {
             Text(
                 text = "Monitoring Ruang",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
@@ -309,7 +325,6 @@ private fun GedungSection(
 @Composable
 private fun KelasSection(modifier: Modifier = Modifier, viewModel: MonitoringViewModel) {
     val roomCount by viewModel.roomCounts.collectAsStateWithLifecycle()
-
 
     roomCount.filter { it.building_name == "Gedung C" }
         .forEach { building ->
@@ -471,14 +486,12 @@ private fun KelasSection(modifier: Modifier = Modifier, viewModel: MonitoringVie
                 }
             }
 
-
         }
 }
 
 
 @Composable
 private fun TransitSection(modifier: Modifier = Modifier, room_name: String, room_status: String) {
-
     Column(
         modifier = modifier
             .width(100.dp)
@@ -523,7 +536,6 @@ private fun TransitSection(modifier: Modifier = Modifier, room_name: String, roo
 
 
     }
-
 
 
 }

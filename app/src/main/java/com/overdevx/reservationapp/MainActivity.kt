@@ -49,6 +49,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.overdevx.reservationapp.data.presentation.HomeScreen
+import com.overdevx.reservationapp.data.presentation.home.HomeUserScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Access
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreen
@@ -103,11 +104,7 @@ class MainActivity : ComponentActivity() {
             ) { innerPadding ->
             // Cek apakah token sudah ada
             val token = tokenProvider.getToken()
-            val startDestination = if (token.isNullOrEmpty()) {
-                MonitoringRoute
-            } else {
-                HomeRoute
-            }
+            val startDestination = HomeRoute
             NavHost(
                 modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                 navController = navController,
@@ -131,6 +128,9 @@ class MainActivity : ComponentActivity() {
                     showBottomBar = false
                 }
                 composable<HomeRoute> {
+                    HomeUserScreen()
+                }
+                composable<ControlRoute> {
                     val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
                     if (token2.isNullOrEmpty()) {
                       Access(
@@ -239,6 +239,7 @@ class MainActivity : ComponentActivity() {
         val bottomScreens = remember {
             listOf(
                 BottomScreens.Home,
+                BottomScreens.Control,
                 BottomScreens.Monitoring,
                 BottomScreens.History,
             )
@@ -305,6 +306,9 @@ data object LoginRoute
 data object HomeRoute
 
 @Serializable
+data object ControlRoute
+
+@Serializable
 data object MonitoringRoute
 
 @Serializable
@@ -337,9 +341,18 @@ sealed class BottomScreens<T>(
 ) {
     @Serializable
     data object Home : BottomScreens<HomeRoute>(
+        name = "Home",
+        icon = R.drawable.ic_home_outline,
+        route = HomeRoute,
+        selectedIconResId = R.drawable.ic_home_filled,
+        unselectedIconResId = R.drawable.ic_home_outline
+    )
+
+    @Serializable
+    data object Control : BottomScreens<ControlRoute>(
         name = "Control",
         icon = R.drawable.ic_settings_outline,
-        route = HomeRoute,
+        route = ControlRoute,
         selectedIconResId = R.drawable.ic_settings_filled,
         unselectedIconResId = R.drawable.ic_settings_outline
     )

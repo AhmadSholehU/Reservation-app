@@ -49,6 +49,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.overdevx.reservationapp.data.presentation.HomeScreen
+import com.overdevx.reservationapp.data.presentation.home.DetailHomeUserScreen
 import com.overdevx.reservationapp.data.presentation.home.HomeUserScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Access
@@ -128,7 +129,9 @@ class MainActivity : ComponentActivity() {
                     showBottomBar = false
                 }
                 composable<HomeRoute> {
-                    HomeUserScreen()
+                    HomeUserScreen(onClick = {
+                        navController.navigate(DetailHomeUserRoute)
+                    })
                 }
                 composable<ControlRoute> {
                     val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
@@ -230,6 +233,13 @@ class MainActivity : ComponentActivity() {
                         .padding(bottom = innerPadding.calculateBottomPadding()))
                     showBottomBar = true
                 }
+
+                composable<DetailHomeUserRoute> {
+                    DetailHomeUserScreen(
+                        onNavigateBack = { navController.navigateUp()},
+                        modifier = Modifier
+                        .padding(bottom = innerPadding.calculateBottomPadding()))
+                }
             }
         }
     }
@@ -330,6 +340,9 @@ data class RoomsRouteAdminC(
     val id: Int,
     val name: String
 )
+
+@Serializable
+data object DetailHomeUserRoute
 
 @Serializable
 sealed class BottomScreens<T>(

@@ -49,7 +49,9 @@ import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 
 @Composable
-fun HomeUserScreen(modifier: Modifier = Modifier) {
+fun HomeUserScreen(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -58,7 +60,7 @@ fun HomeUserScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
         HeaderSection(modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(16.dp))
-        MainSection()
+        MainSection(onClick = onClick)
     }
 
 }
@@ -121,7 +123,9 @@ private fun HeaderSection(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun MainSection(modifier: Modifier = Modifier) {
+private fun MainSection(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Column {
@@ -157,19 +161,22 @@ private fun MainSection(modifier: Modifier = Modifier) {
         }
         LazyColumn {
             items(10){
-                Item()
+                Item(onClick = onClick)
             }
         }
     }
 }
 
 @Composable
-private fun Item (modifier: Modifier = Modifier) {
+private fun Item (
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier) {
     Row (modifier = Modifier
         .fillMaxWidth()
         .padding(5.dp)
         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
-        .background(white)){
+        .background(white)
+        .clickable { onClick() }){
         Image(
             painter = painterResource(id = R.drawable.ic_launcher_background),
             contentDescription = null,
@@ -199,9 +206,6 @@ private fun Item (modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .size(20.dp),
                 rating = rating,
-                onRatingChanged = {
-                    rating = it
-                },
                 starsColor = Color.Yellow
             )
 
@@ -237,7 +241,6 @@ fun RatingBar(
     modifier: Modifier = Modifier,
     rating: Double = 0.0,
     stars: Int = 5,
-    onRatingChanged: (Double) -> Unit,
     starsColor: Color = Color.Yellow
 ) {
 
@@ -260,7 +263,7 @@ fun RatingBar(
                 contentDescription = null,
                 tint = starsColor,
                 modifier = modifier
-                    .clickable { onRatingChanged(index.toDouble()) }
+//                    .clickable { onRatingChanged(index.toDouble()) }
             )
         }
     }

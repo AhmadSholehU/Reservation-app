@@ -76,7 +76,6 @@ fun HomeScreen(
     viewModel: BuildingViewModel = hiltViewModel()
 ) {
     val buildingState by viewModel.buildingState.collectAsStateWithLifecycle()
-
     val coroutineScope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     val state = rememberPullToRefreshState()
@@ -96,7 +95,6 @@ fun HomeScreen(
                 state = state,
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh,
-
                 ) {
                 when (buildingState) {
                     is Resource.Loading -> {

@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -22,14 +24,18 @@ import androidx.compose.material.icons.rounded.StarHalf
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,33 +46,119 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
+import com.overdevx.reservationapp.data.model.DetailService
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.ui.theme.yellow
+import com.overdevx.reservationapp.utils.Resource
+import com.overdevx.reservationapp.utils.formatCurrency
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeUserScreen(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier) {
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    onClick: (Int, String, String, Int, Int,String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val detailState by homeViewModel.detailServiceState.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val state = rememberPullToRefreshState()
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
+        coroutineScope.launch {
+            delay(2000)
+            homeViewModel.fetchDetailService()
+            isRefreshing = false
+        }
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(start = 16.dp, end = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        HeaderSection(modifier.align(Alignment.CenterHorizontally))
+        HeaderSection(homeViewModel, modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(16.dp))
-        MainSection(onClick = onClick)
-    }
+        PullToRefreshBox(
+            state = state,
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+        ) {
+            when (detailState) {
+                is Resource.Loading -> {
+                    Loading()
+                }
 
+                is Resource.Error -> {
+                    // Handle error dari Exception
+                    val exceptionMessage =
+                        (detailState as Resource.Error).exception.message
+                            ?: "Unknown error occurred"
+                    ErrorItem(errorMsg = exceptionMessage)
+                }
+
+                is Resource.ErrorMessage -> {
+
+                }
+
+                is Resource.Success -> {
+                    val detailServiceList =
+                        (detailState as Resource.Success<List<DetailService>>).data
+                    //MainSection(onClick = { onClick() }, detailService = detailServiceList)
+
+                    if (detailServiceList != null) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                        ) {
+                            items(detailServiceList, key = { it.detail_service_id }) {
+                                Item(
+                                    onClick = {
+                                        onClick(
+                                            it.detail_service_id,
+                                            it.deskripsi,
+                                            it.nama,
+                                            it.harga,
+                                            it.jumlah_kamar,
+                                            it.rating.toString()
+                                        )
+                                    },
+                                    roomName = it.nama,
+                                    rating = it.rating,
+                                    harga = it.harga,
+                                    jumlah_kamar = it.jumlah_kamar
+                                )
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                else -> {}
+            }
+        }
+    }
 }
 
+
 @Composable
-private fun HeaderSection(modifier: Modifier = Modifier) {
+private fun HeaderSection(homeViewModel: HomeViewModel, modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "ASRAMA BALAI DIKLAT",
@@ -76,6 +168,7 @@ private fun HeaderSection(modifier: Modifier = Modifier) {
             letterSpacing = 3.sp,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
+
         Text(
             text = "Jl. Fatmawati No.73a, Kedungmundu, Kec. Tembalang,Kota Semarang, Jawa Tengah 50273",
             fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
@@ -83,10 +176,12 @@ private fun HeaderSection(modifier: Modifier = Modifier) {
             color = secondary,
             textAlign = TextAlign.Center,
         )
+
         Spacer(modifier = Modifier.height(10.dp))
+
         Button(
             onClick = {
-
+                homeViewModel.fetchDetailService()
             },
             shape = RoundedCornerShape(25.dp),
             colors = ButtonDefaults.buttonColors(
@@ -106,6 +201,7 @@ private fun HeaderSection(modifier: Modifier = Modifier) {
                         tint = white,
                         modifier = Modifier.align(Alignment.CenterVertically)
                     )
+
                     Text(
                         text = "Dapatkan Lokasi",
                         fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
@@ -122,61 +218,69 @@ private fun HeaderSection(modifier: Modifier = Modifier) {
     }
 }
 
+//@Composable
+//private fun MainSection(
+//    onClick: () -> Unit,
+//    detailService: List<DetailService>? = null,
+//    modifier: Modifier = Modifier
+//) {
+//    Column(modifier = Modifier.fillMaxWidth()) {
+//        Row(modifier = Modifier.fillMaxWidth()) {
+//            Column {
+//                Text(
+//                    text = "Daftar Ruang",
+//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+//                    fontSize = 20.sp,
+//                    color = secondary,
+//                    modifier = Modifier
+//                )
+//                Text(
+//                    text = "6 Ruang Disewakan",
+//                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+//                    fontSize = 16.sp,
+//                    color = gray,
+//
+//                    modifier = Modifier
+//                )
+//            }
+//            Spacer(modifier = Modifier.weight(1f))
+//            TextButton(
+//                onClick = { },
+//            ) {
+//                Text(
+//                    text = "Cek Ketersediaan",
+//                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+//                    fontSize = 16.sp,
+//                    color = gray,
+//
+//                    modifier = Modifier
+//                )
+//            }
+//        }
+//        LazyColumn {
+//            item(detailService) {
+//                Item(onClick = onClick)
+//            }
+//        }
+//    }
+//}
+
 @Composable
-private fun MainSection(
+private fun Item(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                Text(
-                    text = "Daftar Ruang",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 20.sp,
-                    color = secondary,
-                    modifier = Modifier
-                )
-                Text(
-                    text = "6 Ruang Disewakan",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 16.sp,
-                    color = gray,
-
-                    modifier = Modifier
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            TextButton(
-                onClick = { },
-            ) {
-                Text(
-                    text = "Cek Ketersediaan",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 16.sp,
-                    color = gray,
-
-                    modifier = Modifier
-                )
-            }
-        }
-        LazyColumn {
-            items(10){
-                Item(onClick = onClick)
-            }
-        }
-    }
-}
-
-@Composable
-private fun Item (
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier) {
-    Row (modifier = Modifier
+    roomName: String? = null,
+    rating: Double,
+    harga: Int,
+    jumlah_kamar: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = Modifier
         .fillMaxWidth()
         .padding(5.dp)
         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
         .background(white)
-        .clickable { onClick() }){
+        .clickable { onClick() }) {
+
         Image(
             painter = painterResource(id = R.drawable.ic_launcher_background),
             contentDescription = null,
@@ -184,57 +288,60 @@ private fun Item (
                 .padding(5.dp)
                 .clip(RoundedCornerShape(8.dp))
         )
+
         Spacer(modifier = Modifier.width(10.dp))
+
         Column(modifier = Modifier.align(Alignment.CenterVertically)) {
             Text(
-                text = "Kamar",
+                text = "$roomName",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                 fontSize = 20.sp,
                 color = secondary,
-                modifier = Modifier)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "10 Kamar Tersedia",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
-                color = secondary,
                 modifier = Modifier
             )
-            var rating by remember { mutableDoubleStateOf(3.5) }
-
+            Spacer(modifier = Modifier.height(10.dp))
+            // var rating by remember { mutableDoubleStateOf(3.5) }
             RatingBar(
                 modifier = Modifier
                     .size(20.dp),
                 rating = rating,
-                starsColor = Color.Yellow
+                starsColor = yellow
             )
 
             Spacer(modifier = Modifier.height(10.dp))
+            val formatHarga = formatCurrency(harga)
             Text(
-                text = "Rp200.000 /Kamar /Hari",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                text = "Rp$formatHarga /Kamar /Hari",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                 fontSize = 16.sp,
-                color = secondary,
+                color = primary,
                 modifier = Modifier
             )
 
         }
-        TextButton(
-            onClick = { },
-            modifier = Modifier.padding(5.dp)
 
-        ) {
-            Text(
-                text = "Selengkapnya",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
-                color = gray,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-        }
+//        TextButton(
+//            onClick = { },
+//            modifier = Modifier
+//                .padding(5.dp)
+//                .widthIn(min = 120.dp, max = 120.dp) // Set fixed width for the button
+//        ) {
+//            Text(
+//                text = "Selengkapnya",
+//                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+//                fontSize = 16.sp,
+//                color = gray,
+//                maxLines = 1, // Ensure the text stays on one line
+//                overflow = TextOverflow.Ellipsis, // Show ellipsis if text overflows
+//                modifier = Modifier.align(Alignment.CenterVertically)
+//            )
+//        }
+
 
     }
 }
+
+
 
 @Composable
 fun RatingBar(
@@ -267,4 +374,6 @@ fun RatingBar(
             )
         }
     }
+
+
 }

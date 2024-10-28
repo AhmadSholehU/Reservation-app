@@ -1,9 +1,12 @@
 package com.overdevx.reservationapp.data.presentation.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -13,14 +16,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -34,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,14 +51,22 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import kotlin.math.absoluteValue
 
 @Composable
 fun DetailHomeUserScreen(
+    roomName: String,
+    harga: Int,
+    rating: String,
+    deskripsi: String,
+    jumlahKamar: Int,
+    onClick: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -58,7 +75,7 @@ fun DetailHomeUserScreen(
         Spacer(modifier = Modifier.height(10.dp))
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
-                MainSection()
+                MainSection(roomName, harga, rating, deskripsi, jumlahKamar, onClick = {onClick()})
             }
         }
 
@@ -102,7 +119,15 @@ private fun TopBarSection(
 }
 
 @Composable
-private fun MainSection(modifier: Modifier = Modifier) {
+private fun MainSection(
+    roomName: String,
+    harga: Int,
+    rating: String,
+    deskripsi: String,
+    jumlahKamar: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val state = rememberPagerState { 3 }
 
     Column(
@@ -112,19 +137,58 @@ private fun MainSection(modifier: Modifier = Modifier) {
     ) {
         HorizontalPager(
             state = state,
+            contentPadding = PaddingValues(end = 64.dp),
             modifier = Modifier.fillMaxWidth()
         ) { page ->
             Box(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .background(color = secondary)
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-            )
-            {
-                Text(text = "Page $page")
+                Modifier
+                    .size(300.dp)
+                    .graphicsLayer {
+                        // Calculate the absolute offset for the current page from the
+                        // scroll position. We use the absolute value which allows us to mirror
+                        // any effects for both directions
+                        val pageOffset = (
+                                (state.currentPage - page) + state
+                                    .currentPageOffsetFraction
+                                ).absoluteValue
+
+                        // We animate the alpha, between 50% and 100%
+                        alpha = lerp(
+                            start = 0.5f,
+                            stop = 1f,
+                            fraction = 1f - pageOffset.coerceIn(0f, 1f)
+                        )
+                    }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.img_sample),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            Modifier
+                .wrapContentHeight()
+                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(state.pageCount) { iteration ->
+                val color = if (state.currentPage == iteration) Color.DarkGray else Color.LightGray
+                Box(
+                    modifier = Modifier
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                        .size(10.dp)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -132,23 +196,23 @@ private fun MainSection(modifier: Modifier = Modifier) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
-                    text = "Kamar",
+                    text = "$roomName",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 20.sp,
                     color = secondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                 )
-                var rating by remember { mutableDoubleStateOf(3.5) }
+
                 Row {
                     RatingBar(
                         modifier = Modifier
                             .size(20.dp),
-                        rating = rating,
+                        rating = rating.toDouble(),
                         starsColor = Color.Yellow
                     )
                     Text(
-                        text = "5.0",
+                        text = rating,
                         fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
                         fontSize = 16.sp,
                         color = Color.Red,
@@ -157,7 +221,7 @@ private fun MainSection(modifier: Modifier = Modifier) {
                     )
                 }
                 Text(
-                    text = "25 Kamar Tersedia",
+                    text = "$jumlahKamar Kamar Tersedia",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
                     fontSize = 16.sp,
                     color = gray,
@@ -168,7 +232,7 @@ private fun MainSection(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.weight(1f))
             Column(modifier = Modifier) {
                 Text(
-                    text = "Rp200.000",
+                    text = "$harga",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 20.sp,
                     color = secondary,
@@ -185,7 +249,7 @@ private fun MainSection(modifier: Modifier = Modifier) {
         }
 
         Text(
-            text = stringResource(R.string.description),
+            text = "$deskripsi",
             fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
             fontSize = 20.sp,
             color = secondary,
@@ -199,7 +263,7 @@ private fun MainSection(modifier: Modifier = Modifier) {
                 .padding(bottom = 10.dp, top = 10.dp)
         ) {
             Button(
-                onClick = {},
+                onClick = {onClick()},
                 modifier = Modifier
                     .width(200.dp)
                     .height(50.dp),
@@ -221,7 +285,7 @@ private fun MainSection(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = {  },
+                onClick = { },
                 modifier = modifier
                     .border(
                         width = 1.dp, // ketebalan border
@@ -232,7 +296,7 @@ private fun MainSection(modifier: Modifier = Modifier) {
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(Color.Transparent), // Warna latar tombol
 
-            )  {
+            ) {
                 Text(
                     text = "CEK KETERSEDIAAN",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),

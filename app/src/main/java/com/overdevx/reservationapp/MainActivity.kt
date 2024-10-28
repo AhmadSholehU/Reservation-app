@@ -52,6 +52,7 @@ import com.overdevx.reservationapp.data.presentation.HomeScreen
 import com.overdevx.reservationapp.data.presentation.home.DetailHomeUserScreen
 import com.overdevx.reservationapp.data.presentation.home.HomeUserScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.MonitoringScreen2
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Access
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.AdminRoomScreenC
@@ -67,6 +68,10 @@ import com.overdevx.reservationapp.utils.TokenProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -129,23 +134,36 @@ class MainActivity : ComponentActivity() {
                     showBottomBar = false
                 }
                 composable<HomeRoute> {
-                    HomeUserScreen(onClick = {
-                        navController.navigate(DetailHomeUserRoute)
+                    HomeUserScreen(onClick = { id, deskripsi, roomName, harga, jumlahKamar,rating ->
+                        navController.navigate(
+                            DetailHomeUserRoute(
+                                id,
+                                deskripsi,
+                                roomName,
+                                harga,
+                                jumlahKamar,
+                                rating
+                            )
+                        )
+
                     })
                 }
                 composable<ControlRoute> {
                     val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
                     if (token2.isNullOrEmpty()) {
-                      Access(
-                          onLoginClick = {
-                              navController.navigate(LoginRoute)
-                          },
-                          modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
+                        Access(
+                            onLoginClick = {
+                                navController.navigate(LoginRoute)
+                            },
+                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                        )
 
                     } else {
                         HomeScreen(
                             modifier = Modifier.padding(
-                                end = 16.dp, start = 16.dp, bottom = innerPadding.calculateBottomPadding()
+                                end = 16.dp,
+                                start = 16.dp,
+                                bottom = innerPadding.calculateBottomPadding()
                             ),
                             onClick = { buildingId, buildingName ->
                                 if (buildingId == 3) {
@@ -171,20 +189,19 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-
                     showBottomBar = true
                 }
                 composable<MonitoringRoute> {
-                    MonitoringScreen(
+                    MonitoringScreen2(
                         modifier = Modifier.padding(
-                            end = 16.dp,
-                            start = 16.dp,
-                            bottom = innerPadding.calculateBottomPadding()
+                            bottom = innerPadding.calculateBottomPadding() + 20.dp,
+                            top = 16.dp
                         ),
                         onClick = { buildingId ->
                             navController.navigate(RoomsRouteUser(id = buildingId))
                         },
                     )
+
                     showBottomBar = true
                 }
 
@@ -229,16 +246,51 @@ class MainActivity : ComponentActivity() {
                 }
 
                 composable<HistoryRoute> {
-                    HistoryScreen(modifier = Modifier
-                        .padding(bottom = innerPadding.calculateBottomPadding()))
+                    HistoryScreen(
+                        modifier = Modifier
+                            .padding(bottom = innerPadding.calculateBottomPadding())
+                    )
                     showBottomBar = true
                 }
 
                 composable<DetailHomeUserRoute> {
+                    val args = it.toRoute<DetailHomeUserRoute>()
+                    val id = args.id
+                    val deskripsi = args.deskripsi
+                    val roomName = args.roomName
+                    val harga = args.harga
+                    val jumlahKamar = args.jumlah_kamar
+                    val rating = args.rating
+                    val context = LocalContext.current
                     DetailHomeUserScreen(
-                        onNavigateBack = { navController.navigateUp()},
+                        roomName,
+                        harga,
+                        rating,
+                        deskripsi,
+                        jumlahKamar,
+                        onClick = {
+                            context.startActivity(
+                                // on below line we are opening the intent.
+                                Intent(
+                                    // on below line we are calling
+                                    // uri to parse the data
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(
+                                        // on below line we are passing uri,
+                                        // message and whats app phone number.
+                                        java.lang.String.format(
+                                            "https://api.whatsapp.com/send?phone=%s&text=%s",
+                                            "+62 81227978072",
+                                            "yo wassap hooman"
+                                        )
+                                    )
+                                )
+                            )
+                        },
+                        onNavigateBack = { navController.navigateUp() },
                         modifier = Modifier
-                        .padding(bottom = innerPadding.calculateBottomPadding()))
+                            .padding(bottom = innerPadding.calculateBottomPadding())
+                    )
                 }
             }
         }
@@ -342,7 +394,14 @@ data class RoomsRouteAdminC(
 )
 
 @Serializable
-data object DetailHomeUserRoute
+data class DetailHomeUserRoute(
+    val id: Int,
+    val deskripsi: String,
+    val roomName: String,
+    val harga: Int,
+    val jumlah_kamar: Int,
+    val rating: String
+)
 
 @Serializable
 sealed class BottomScreens<T>(

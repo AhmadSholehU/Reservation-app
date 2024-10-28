@@ -4,6 +4,7 @@ import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.BuildingResponse
+import com.overdevx.reservationapp.data.model.DetailServiceResponse
 import com.overdevx.reservationapp.data.model.HistoryResponse
 import com.overdevx.reservationapp.data.model.LoginRequest
 import com.overdevx.reservationapp.data.model.LoginResponse
@@ -61,5 +62,8 @@ interface ApiService {
 
     @GET("history")
     suspend fun getHistory(): Response<HistoryResponse>
+
+    @GET("detailService")
+    suspend fun getDetailService(): Response<DetailServiceResponse>
 }
 

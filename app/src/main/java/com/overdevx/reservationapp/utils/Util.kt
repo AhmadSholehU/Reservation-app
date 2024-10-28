@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.utils
 
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -16,4 +17,9 @@ fun convertDate(selectedDate: Long): String {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val date = Date(selectedDate)
     return dateFormat.format(date)
+}
+
+fun formatCurrency(value: Int): String {
+    val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))
+    return formatter.format(value)
 }

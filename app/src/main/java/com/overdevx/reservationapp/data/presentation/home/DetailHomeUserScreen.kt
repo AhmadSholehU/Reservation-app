@@ -52,11 +52,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
+import coil.compose.AsyncImage
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.utils.replaceDomain
 import kotlin.math.absoluteValue
 
 @Composable
@@ -66,6 +68,7 @@ fun DetailHomeUserScreen(
     rating: String,
     deskripsi: String,
     jumlahKamar: Int,
+    foto:String,
     onClick: () -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -75,7 +78,7 @@ fun DetailHomeUserScreen(
         Spacer(modifier = Modifier.height(10.dp))
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
-                MainSection(roomName, harga, rating, deskripsi, jumlahKamar, onClick = {onClick()})
+                MainSection(roomName, harga, rating, deskripsi, jumlahKamar,foto, onClick = {onClick()})
             }
         }
 
@@ -125,6 +128,7 @@ private fun MainSection(
     rating: String,
     deskripsi: String,
     jumlahKamar: Int,
+    foto:String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -160,11 +164,16 @@ private fun MainSection(
                         )
                     }
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_sample),
+                val newDomain = "192.168.1.110"
+                val newfoto = replaceDomain(foto,newDomain)
+                AsyncImage(
+                    model = newfoto,
                     contentDescription = null,
+                    Modifier
+                        .fillMaxSize()
+                        .padding(5.dp)
+                        .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
                 )
             }
 

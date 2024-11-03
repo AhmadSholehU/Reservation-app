@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                     showBottomBar = false
                 }
                 composable<HomeRoute> {
-                    HomeUserScreen(onClick = { id, deskripsi, roomName, harga, jumlahKamar,rating ->
+                    HomeUserScreen(onClick = { id, deskripsi, roomName, harga, jumlahKamar,rating,foto ->
                         navController.navigate(
                             DetailHomeUserRoute(
                                 id,
@@ -142,11 +142,13 @@ class MainActivity : ComponentActivity() {
                                 roomName,
                                 harga,
                                 jumlahKamar,
-                                rating
+                                rating,
+                                foto
                             )
                         )
 
-                    })
+                    }
+                    , modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
                 }
                 composable<ControlRoute> {
                     val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
@@ -261,6 +263,7 @@ class MainActivity : ComponentActivity() {
                     val harga = args.harga
                     val jumlahKamar = args.jumlah_kamar
                     val rating = args.rating
+                    val foto = args.foto
                     val context = LocalContext.current
                     DetailHomeUserScreen(
                         roomName,
@@ -268,6 +271,7 @@ class MainActivity : ComponentActivity() {
                         rating,
                         deskripsi,
                         jumlahKamar,
+                        foto,
                         onClick = {
                             context.startActivity(
                                 // on below line we are opening the intent.
@@ -400,7 +404,8 @@ data class DetailHomeUserRoute(
     val roomName: String,
     val harga: Int,
     val jumlah_kamar: Int,
-    val rating: String
+    val rating: String,
+    val foto:String
 )
 
 @Serializable

@@ -6,6 +6,7 @@ import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.BuildingResponse
 import com.overdevx.reservationapp.data.model.DetailServiceResponse
 import com.overdevx.reservationapp.data.model.HistoryResponse
+import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.LoginRequest
 import com.overdevx.reservationapp.data.model.LoginResponse
 import com.overdevx.reservationapp.data.model.MonitoringResponse
@@ -65,5 +66,11 @@ interface ApiService {
 
     @GET("detailService")
     suspend fun getDetailService(): Response<DetailServiceResponse>
+
+    @GET("booking-rooms/cektanggal/{id}")
+    suspend fun getKetersediaan(@Path("id") roomId: Int): KetersediaanResponse
+
+
+
 }
 

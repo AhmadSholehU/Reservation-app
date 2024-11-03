@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -51,10 +52,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.overdevx.reservationapp.BuildConfig
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.DetailService
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
@@ -62,6 +67,7 @@ import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.yellow
 import com.overdevx.reservationapp.utils.Resource
 import com.overdevx.reservationapp.utils.formatCurrency
+import com.overdevx.reservationapp.utils.replaceDomain
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,7 +76,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeUserScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
-    onClick: (Int, String, String, Int, Int,String) -> Unit,
+    onClick: (Int, String, String, Int, Int,String,String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val detailState by homeViewModel.detailServiceState.collectAsStateWithLifecycle()
@@ -91,7 +97,7 @@ fun HomeUserScreen(
             .padding(start = 16.dp, end = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        HeaderSection(homeViewModel, modifier.align(Alignment.CenterHorizontally))
+        HeaderSection(homeViewModel, Modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(16.dp))
         PullToRefreshBox(
             state = state,
@@ -100,7 +106,7 @@ fun HomeUserScreen(
         ) {
             when (detailState) {
                 is Resource.Loading -> {
-                    Loading()
+                    LoadingShimmerEffect()
                 }
 
                 is Resource.Error -> {
@@ -134,13 +140,15 @@ fun HomeUserScreen(
                                             it.nama,
                                             it.harga,
                                             it.jumlah_kamar,
-                                            it.rating.toString()
+                                            it.rating.toString(),
+                                            it.foto
                                         )
                                     },
                                     roomName = it.nama,
                                     rating = it.rating,
                                     harga = it.harga,
-                                    jumlah_kamar = it.jumlah_kamar
+                                    jumlah_kamar = it.jumlah_kamar,
+                                    foto = it.foto
                                 )
                             }
 
@@ -181,7 +189,7 @@ private fun HeaderSection(homeViewModel: HomeViewModel, modifier: Modifier = Mod
 
         Button(
             onClick = {
-                homeViewModel.fetchDetailService()
+                //homeViewModel.fetchDetailService()
             },
             shape = RoundedCornerShape(25.dp),
             colors = ButtonDefaults.buttonColors(
@@ -217,54 +225,6 @@ private fun HeaderSection(homeViewModel: HomeViewModel, modifier: Modifier = Mod
         }
     }
 }
-
-//@Composable
-//private fun MainSection(
-//    onClick: () -> Unit,
-//    detailService: List<DetailService>? = null,
-//    modifier: Modifier = Modifier
-//) {
-//    Column(modifier = Modifier.fillMaxWidth()) {
-//        Row(modifier = Modifier.fillMaxWidth()) {
-//            Column {
-//                Text(
-//                    text = "Daftar Ruang",
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                    fontSize = 20.sp,
-//                    color = secondary,
-//                    modifier = Modifier
-//                )
-//                Text(
-//                    text = "6 Ruang Disewakan",
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-//                    fontSize = 16.sp,
-//                    color = gray,
-//
-//                    modifier = Modifier
-//                )
-//            }
-//            Spacer(modifier = Modifier.weight(1f))
-//            TextButton(
-//                onClick = { },
-//            ) {
-//                Text(
-//                    text = "Cek Ketersediaan",
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-//                    fontSize = 16.sp,
-//                    color = gray,
-//
-//                    modifier = Modifier
-//                )
-//            }
-//        }
-//        LazyColumn {
-//            item(detailService) {
-//                Item(onClick = onClick)
-//            }
-//        }
-//    }
-//}
-
 @Composable
 private fun Item(
     onClick: () -> Unit,
@@ -272,6 +232,7 @@ private fun Item(
     rating: Double,
     harga: Int,
     jumlah_kamar: Int,
+    foto:String,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = Modifier
@@ -280,14 +241,21 @@ private fun Item(
         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
         .background(white)
         .clickable { onClick() }) {
-
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_background),
-            contentDescription = null,
-            Modifier
+        val newDomain = "192.168.1.110"
+        val newfoto = replaceDomain(foto,newDomain)
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(newfoto)
+                .crossfade(true)
+                .build(),
+            modifier = Modifier
                 .padding(5.dp)
-                .clip(RoundedCornerShape(8.dp))
-        )
+                .size(100.dp)
+                .clip(RoundedCornerShape(8.dp)),
+//            placeholder = painterResource(id = R.drawable.img_placeholder),
+            contentDescription = null,
+
+            )
 
         Spacer(modifier = Modifier.width(10.dp))
 

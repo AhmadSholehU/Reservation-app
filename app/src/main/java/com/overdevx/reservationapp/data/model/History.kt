@@ -10,7 +10,8 @@ data class History(
     val booking_room_id: Int,
     val room_id: Int,
     val days: Int,
-    val date:String,
+    var start_date:String,
+    val end_date:String,
     val change_at: String,
     val Room: BookingDetail
 )

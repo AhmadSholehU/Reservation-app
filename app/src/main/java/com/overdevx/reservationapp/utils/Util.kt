@@ -23,3 +23,7 @@ fun formatCurrency(value: Int): String {
     val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))
     return formatter.format(value)
 }
+
+fun replaceDomain(url: String, newDomain: String): String {
+    return url.replace("localhost", newDomain)
+}

@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -89,6 +90,7 @@ fun AdminRoomScreenC(
     var selected_date by remember { mutableStateOf("") }
     var current_room_status by remember { mutableStateOf("") }
     var booking_room_id by remember { mutableStateOf(0) }
+    val unselectableDates = remember { mutableStateListOf<Long>() }
 
     val bookingState by viewModelBooking.bookingState.collectAsStateWithLifecycle()
     val updateRoomState by viewModelBooking.updateRoomState.collectAsStateWithLifecycle()
@@ -154,6 +156,7 @@ fun AdminRoomScreenC(
                 onDaysChange = { days ->
                     days_change = days.toInt()
                 },
+                unselectableDates = unselectableDates,
                 modifier = modifier
             )
         }
@@ -214,7 +217,7 @@ fun AdminRoomScreenC(
 
         when (bookingRoomState) {
             is Resource.Loading -> {
-                // Show loading indicator if necessary
+               LoadingShimmerEffect()
             }
             is Resource.Success -> {
                 // Handle successful booking room data

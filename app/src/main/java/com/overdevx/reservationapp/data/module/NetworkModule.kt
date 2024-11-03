@@ -20,7 +20,7 @@ import javax.inject.Qualifier
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    var BASE_URL ="http://192.168.1.115:3000/api/"
+    var BASE_URL ="http://192.168.1.110:3000/api/"
     var BASE_URL2 ="http://192.168.39.85:3000/api/"
     @Provides
     @Singleton

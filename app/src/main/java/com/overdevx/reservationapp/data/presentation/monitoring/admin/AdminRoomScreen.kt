@@ -1,6 +1,8 @@
 package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
 import android.annotation.SuppressLint
+import android.os.Build
+import android.os.Parcel
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -36,6 +38,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
@@ -45,11 +48,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -59,10 +64,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,14 +91,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material.shimmer
 import com.google.accompanist.placeholder.placeholder
 import com.google.accompanist.placeholder.shimmer
+import com.google.android.material.datepicker.CalendarConstraints
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
+import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
 import com.overdevx.reservationapp.ui.theme.gray
@@ -103,6 +114,13 @@ import com.overdevx.reservationapp.utils.Resource
 import com.overdevx.reservationapp.utils.convertDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.ZoneId
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,11 +144,13 @@ fun AdminRoomScreen(
     var selected_date by remember { mutableStateOf("") }
     var current_room_status by remember { mutableStateOf("") }
     var booking_room_id by remember { mutableStateOf(0) }
+    val unselectableDates = remember { mutableStateListOf<Long>() }
 
     val bookingState by viewModelBooking.bookingState.collectAsStateWithLifecycle()
     val updateRoomState by viewModelBooking.updateRoomState.collectAsStateWithLifecycle()
     val bookingRoomState by viewModelBooking.getBookingState.collectAsStateWithLifecycle()
     val updateBookingRoomState by viewModelBooking.updatatebookingState.collectAsStateWithLifecycle()
+    val ketersediaanState by viewModelBooking.getKetersediaanState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -141,6 +161,7 @@ fun AdminRoomScreen(
     LaunchedEffect(selectedRoomNumber) {
         selectedRoomNumber?.let {
             viewModelBooking.getBookingRoom(room_id ?: return@LaunchedEffect)
+            viewModelBooking.getKetersediaan(room_id ?: return@LaunchedEffect)
         }
     }
     Column(modifier = modifier.padding(16.dp)
@@ -239,6 +260,7 @@ fun AdminRoomScreen(
                 onDaysChange = { days ->
                     days_change = days.toInt()
                 },
+                unselectableDates = unselectableDates,
                 modifier = modifier
             )
         }
@@ -314,6 +336,45 @@ fun AdminRoomScreen(
                 // Extract booking_room_id from the data
                 booking_room_id = bookingData?.data?.booking_room_id?:0
 
+            }
+            is Resource.Error -> {
+                // Handle error state (e.g., show a Snackbar or Toast)
+            }
+            is Resource.ErrorMessage -> {
+                // Handle specific error messages
+            }
+            is Resource.Idle -> {
+                // Do nothing, idle state
+            }
+        }
+
+        when (ketersediaanState) {
+            is Resource.Loading -> {
+                // Show loading indicator if necessary
+            }
+            is Resource.Success -> {
+                val ketersediaanDate = (ketersediaanState as Resource.Success<KetersediaanResponse>).data?.data
+                unselectableDates.clear()
+                if (ketersediaanDate != null) {
+                    ketersediaanDate.forEach { ketersediaan ->
+                        // Ubah format SimpleDateFormat sesuai format API
+                        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                        dateFormat.timeZone = TimeZone.getTimeZone("UTC") // Pastikan waktu dalam zona UTC
+
+                        val startDate = dateFormat.parse(ketersediaan.start_date)?.time
+                        val endDate = dateFormat.parse(ketersediaan.end_date)?.time
+
+                        if (startDate != null && endDate != null) {
+                            // Tambahkan semua tanggal dari startDate hingga endDate
+                            var currentDate = startDate
+                            while (currentDate <= endDate) {
+                                unselectableDates.add(currentDate)
+                                currentDate += 24 * 60 * 60 * 1000 // Tambah satu hari dalam milidetik
+                            }
+                        }
+                    }
+                }
+                Log.d("DATE",unselectableDates.toString())
             }
             is Resource.Error -> {
                 // Handle error state (e.g., show a Snackbar or Toast)
@@ -506,7 +567,7 @@ private fun RoomSection(
         ) {
             when (roomState) {
                 is Resource.Loading -> {
-                    TutorialShimmerEffect()
+                    LoadingShimmerEffect()
                     //RoomSkeletonGrid()
                 }
 
@@ -629,12 +690,12 @@ private fun RoomAdminItem(
 }
 
 @Composable
-fun TutorialShimmerEffect() {
+fun LoadingShimmerEffect() {
     fun Modifier.shimmerEffect(): Modifier = composed {
         val colors = listOf(
-            Color.LightGray.copy(alpha = 0.6f),
+            Color.LightGray.copy(alpha = 0.3f),
             Color.LightGray.copy(alpha = 0.2f),
-            Color.LightGray.copy(alpha = 0.6f),
+            Color.LightGray.copy(alpha = 0.3f),
         )
         val transition = rememberInfiniteTransition(label = "shimmer")
         val shimmerAnimation = transition.animateFloat(
@@ -651,23 +712,46 @@ fun TutorialShimmerEffect() {
             )
         )
     }
-    Row(
-        Modifier
-            .fillMaxSize()
-            .background(white)
-            .shimmerEffect()
-    ) {
-            Column(Modifier.padding(10.dp)) {
-                Box(modifier = Modifier
-                    .size(height = 20.dp, width = 150.dp)
-                    .shimmerEffect())
-                Spacer(modifier = Modifier.height(10.dp))
-                Box(modifier = Modifier
-                    .size(height = 15.dp, width = 80.dp)
-                    .shimmerEffect())
+    LazyColumn {
+        items(5) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .background(white)
+                    .clip(RoundedCornerShape(10.dp))
+
+            ) {
+                Row(Modifier.padding(10.dp)) {
+                    Box(modifier = Modifier
+                        .size(height = 80.dp, width = 80.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .shimmerEffect())
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect())
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(modifier = Modifier
+                            .width(100.dp)
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect())
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(modifier = Modifier
+                            .width(100.dp)
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect())
+                    }
+                }
             }
         }
+        }
     }
+
 
 
 
@@ -714,36 +798,6 @@ fun ButtonSection(
 }
 
 @Composable
-fun RoomSkeletonGrid() {
-    LazyColumn(
-        modifier = Modifier.padding(horizontal = 16.dp)
-    ) {
-        // Jumlah item skeleton untuk loading state
-        items(10) {
-            TutorialShimmerEffect()
-        }
-    }
-}
-
-@Composable
-fun RoomSkeletonItem() {
-    Box(
-        modifier = Modifier
-            .size(100.dp)
-            .padding(10.dp)
-            .placeholder(
-                visible = true, // selalu true selama loading
-                color = Color.LightGray,
-                shape = RoundedCornerShape(8.dp),
-                highlight = PlaceholderHighlight.shimmer(
-                    highlightColor = white
-                )
-            )
-            .clip(RoundedCornerShape(10.dp))
-    )
-}
-
-@Composable
 fun StatusDialog(
     selectedRoomNumber: String?,
     onDismiss: () -> Unit,
@@ -752,6 +806,7 @@ fun StatusDialog(
     onStatusSelected: (String) -> Unit,
     onDateSelected: (String) -> Unit,
     onDaysChange: (String) -> Unit,
+    unselectableDates: MutableList<Long>,
     modifier: Modifier
 ) {
     // State untuk menyimpan status dan waktu penyewaan yang dipilih
@@ -927,16 +982,20 @@ fun StatusDialog(
                 }
 
                 if (showModal) {
-                    DatePickerModal(
-                        onDateSelected = {
-                            if (it != null) {
-                                selectedDate = convertDate(it)
-                                onDateSelected(selectedDate)
-                            }
-                            showModal = false
-                        },
-                        onDismiss = { showModal = false }
-                    )
+//                    DatePickerModal(
+//                        onDateSelected = {
+//                            if (it != null) {
+//                                selectedDate = convertDate(it)
+//                                onDateSelected(selectedDate)
+//                            }
+//                            showModal = false
+//                        },
+//                        onDismiss = { showModal = false }
+//                    )
+
+//                    DateRangePickerSample()
+                    DatePickerWithDateSelectableDatesSample(unselectableDates)
+
                 }
 
             }
@@ -1196,4 +1255,87 @@ fun DatePickerModal(
         )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateRangePickerSample() {
+
+    val state = rememberDateRangePickerState()
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+        // Add a row with "Save" and dismiss actions.
+        Row(
+            modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(DatePickerDefaults.colors().containerColor)
+                .padding(start = 12.dp, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = { /* dismiss the UI */ }) {
+                Icon(Icons.Filled.Close, contentDescription = "Localized description")
+            }
+            TextButton(
+                onClick = {
+
+                },
+                enabled = state.selectedEndDateMillis != null
+            ) {
+                Text(text = "Save")
+            }
+        }
+        DateRangePicker(state = state, modifier = Modifier.weight(1f))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerWithDateSelectableDatesSample(
+    unselectableDates: MutableList<Long>
+) {
+
+    val datePickerState =
+        rememberDatePickerState(
+            selectableDates =
+            object : SelectableDates {
+                // Cek apakah tanggal tersebut ada dalam daftar tanggal yang tidak bisa dipilih
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val dayOfWeek =
+                            Instant.ofEpochMilli(utcTimeMillis)
+                                .atZone(ZoneId.of("UTC"))
+                                .toLocalDate()
+                                .dayOfWeek
+                        utcTimeMillis !in unselectableDates &&
+                                dayOfWeek != DayOfWeek.SUNDAY &&
+                                dayOfWeek != DayOfWeek.SATURDAY
+                    } else {
+                        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                        calendar.timeInMillis = utcTimeMillis
+                        utcTimeMillis !in unselectableDates &&
+                                calendar[Calendar.DAY_OF_WEEK] != Calendar.SUNDAY &&
+                                calendar[Calendar.DAY_OF_WEEK] != Calendar.SATURDAY
+                    }
+                }
+
+
+                // Allow selecting dates from year 2023 forward.
+                override fun isSelectableYear(year: Int): Boolean {
+                    return year > 2022
+                }
+            }
+        )
+
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        DatePicker(state = datePickerState)
+        Text(
+            "Selected date timestamp: ${datePickerState.selectedDateMillis ?: "no selection"}",
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
 

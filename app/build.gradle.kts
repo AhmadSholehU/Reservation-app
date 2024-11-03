@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.baselineprofile)
-
 }
 
 android {
@@ -19,8 +18,10 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String","BASE_URL", "\"http://192.168.1.109:3000/api/\"")
+        buildConfigField("String","BASE_URL2", "\"http://192.168.39.85:3000/api/\"")
+        buildConfigField("String","BASE_URL_FOTO", "\"http://192.168.1.109:3000/\"")
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -43,6 +44,7 @@ android {
         jvmTarget = "1.8"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     composeOptions {

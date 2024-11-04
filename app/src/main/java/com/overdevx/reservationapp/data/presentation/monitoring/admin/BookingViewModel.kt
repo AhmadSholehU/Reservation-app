@@ -43,10 +43,10 @@ class BookingViewModel @Inject constructor(
     val getKetersediaanState: StateFlow<Resource<KetersediaanResponse>> = _getKetersediaanState
 
 
-    fun bookRoom(roomId: Int, days: Int,date:String) {
+    fun bookRoom(roomId: Int, startDate: String,endDate:String) {
         viewModelScope.launch {
             _bookingState.value = Resource.Loading
-            val result = bookingRepository.booking(roomId, days,date)
+            val result = bookingRepository.booking(roomId, startDate,endDate)
             _bookingState.value = result
         }
     }

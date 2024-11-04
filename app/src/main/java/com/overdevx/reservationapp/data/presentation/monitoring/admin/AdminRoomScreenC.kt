@@ -88,6 +88,9 @@ fun AdminRoomScreenC(
     var room_id by remember { mutableStateOf(0) }
     var room_status by remember { mutableStateOf("Tersedia") }
     var selected_date by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    var onDateRangeSelected: (String, String) -> Unit = { _, _ -> }
     var current_room_status by remember { mutableStateOf("") }
     var booking_room_id by remember { mutableStateOf(0) }
     val unselectableDates = remember { mutableStateListOf<Long>() }
@@ -140,7 +143,7 @@ fun AdminRoomScreenC(
                             viewModelBooking.updateBookingRoom(booking_room_id, days_change, selected_date)
                         } else if (current_room_status != "booked" && room_status == "Terbooking") {
                             // Use create booking endpoint if status changes to booked
-                            viewModelBooking.bookRoom(room_id, days_change, selected_date)
+                            viewModelBooking.bookRoom(room_id, startDate, endDate)
                         } else {
                             // Just update room status if not booking
                             viewModelBooking.updateRoomStatus(room_id, statusId)
@@ -157,6 +160,11 @@ fun AdminRoomScreenC(
                     days_change = days.toInt()
                 },
                 unselectableDates = unselectableDates,
+                onDateRangeSelected = { Sd, Ed ->
+                   startDate = Sd
+                    endDate = Ed
+                    Log.d("startDate",startDate)
+                },
                 modifier = modifier
             )
         }

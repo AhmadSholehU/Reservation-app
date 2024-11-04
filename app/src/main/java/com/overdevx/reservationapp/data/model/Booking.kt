@@ -15,8 +15,8 @@ data class Booking(
 
 data class BookingRequest(
     val room_id:Int,
-    val days:Int,
-    val date:String
+    val start_date:String,
+    val end_date:String
 )
 
 data class UpdateBookingRequest(

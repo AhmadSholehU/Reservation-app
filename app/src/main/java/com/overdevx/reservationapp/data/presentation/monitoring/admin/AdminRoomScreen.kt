@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Parcel
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -82,6 +83,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -119,6 +121,7 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
@@ -142,6 +145,9 @@ fun AdminRoomScreen(
     var room_id by remember { mutableStateOf(0) }
     var room_status by remember { mutableStateOf("Tersedia") }
     var selected_date by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    var onDateRangeSelected: (String, String) -> Unit = { _, _ -> }
     var current_room_status by remember { mutableStateOf("") }
     var booking_room_id by remember { mutableStateOf(0) }
     val unselectableDates = remember { mutableStateListOf<Long>() }
@@ -164,8 +170,9 @@ fun AdminRoomScreen(
             viewModelBooking.getKetersediaan(room_id ?: return@LaunchedEffect)
         }
     }
-    Column(modifier = modifier.padding(16.dp)
-        ) {
+    Column(
+        modifier = modifier.padding(16.dp)
+    ) {
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName)
         Spacer(modifier = Modifier.height(10.dp))
         InfoSection(buildingName)
@@ -175,7 +182,7 @@ fun AdminRoomScreen(
             viewModel = viewModel,
             buildingId = buildingId,
             selectedRoomNumber = selectedRoomNumber,
-            onRoomSelected = { selectedRoom, roomId,roomStatus ->
+            onRoomSelected = { selectedRoom, roomId, roomStatus ->
                 selectedRoomNumber = selectedRoom
                 if (roomStatus != null) {
                     current_room_status = roomStatus
@@ -240,10 +247,15 @@ fun AdminRoomScreen(
                         // Differentiate between update and create booking based on initial and selected statuses
                         if (current_room_status == "booked" && room_status == "Terbooking") {
                             // Use update booking endpoint if already booked
-                            viewModelBooking.updateBookingRoom(booking_room_id, days_change, selected_date)
+                            viewModelBooking.updateBookingRoom(
+                                booking_room_id,
+                                days_change,
+                                selected_date
+                            )
                         } else if (current_room_status != "booked" && room_status == "Terbooking") {
                             // Use create booking endpoint if status changes to booked
-                            viewModelBooking.bookRoom(room_id, days_change, selected_date)
+                            Log.d("startDate", startDate)
+                            viewModelBooking.bookRoom(room_id, startDate, endDate)
                         } else {
                             // Just update room status if not booking
                             viewModelBooking.updateRoomStatus(room_id, statusId)
@@ -261,6 +273,11 @@ fun AdminRoomScreen(
                     days_change = days.toInt()
                 },
                 unselectableDates = unselectableDates,
+                onDateRangeSelected = { Sd, Ed ->
+                    startDate = Sd
+                    endDate = Ed
+                    Log.d("startDate", startDate)
+                },
                 modifier = modifier
             )
         }
@@ -284,7 +301,7 @@ fun AdminRoomScreen(
                     )
                     viewModelBooking.resetBookingState()
                     viewModel.fetchRooms(buildingId)
-                    selectedRoomNumber=null
+                    selectedRoomNumber = null
                 }
             }
 
@@ -314,7 +331,7 @@ fun AdminRoomScreen(
                     viewModelBooking.resetBookingState()
                     viewModelBooking.resetUpdateState()
                     viewModel.fetchRooms(buildingId)
-                    selectedRoomNumber=null
+                    selectedRoomNumber = null
                 }
             }
 
@@ -329,20 +346,24 @@ fun AdminRoomScreen(
             is Resource.Loading -> {
                 // Show loading indicator if necessary
             }
+
             is Resource.Success -> {
                 // Handle successful booking room data
                 val bookingData = (bookingRoomState as Resource.Success<BookingRoomResponse>).data
 
                 // Extract booking_room_id from the data
-                booking_room_id = bookingData?.data?.booking_room_id?:0
+                booking_room_id = bookingData?.data?.booking_room_id ?: 0
 
             }
+
             is Resource.Error -> {
                 // Handle error state (e.g., show a Snackbar or Toast)
             }
+
             is Resource.ErrorMessage -> {
                 // Handle specific error messages
             }
+
             is Resource.Idle -> {
                 // Do nothing, idle state
             }
@@ -352,14 +373,18 @@ fun AdminRoomScreen(
             is Resource.Loading -> {
                 // Show loading indicator if necessary
             }
+
             is Resource.Success -> {
-                val ketersediaanDate = (ketersediaanState as Resource.Success<KetersediaanResponse>).data?.data
+                val ketersediaanDate =
+                    (ketersediaanState as Resource.Success<KetersediaanResponse>).data?.data
                 unselectableDates.clear()
                 if (ketersediaanDate != null) {
                     ketersediaanDate.forEach { ketersediaan ->
                         // Ubah format SimpleDateFormat sesuai format API
-                        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                        dateFormat.timeZone = TimeZone.getTimeZone("UTC") // Pastikan waktu dalam zona UTC
+                        val dateFormat =
+                            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                        dateFormat.timeZone =
+                            TimeZone.getTimeZone("UTC") // Pastikan waktu dalam zona UTC
 
                         val startDate = dateFormat.parse(ketersediaan.start_date)?.time
                         val endDate = dateFormat.parse(ketersediaan.end_date)?.time
@@ -372,16 +397,20 @@ fun AdminRoomScreen(
                                 currentDate += 24 * 60 * 60 * 1000 // Tambah satu hari dalam milidetik
                             }
                         }
+
                     }
                 }
-                Log.d("DATE",unselectableDates.toString())
+                Log.d("DATE", unselectableDates.toString())
             }
+
             is Resource.Error -> {
                 // Handle error state (e.g., show a Snackbar or Toast)
             }
+
             is Resource.ErrorMessage -> {
                 // Handle specific error messages
             }
+
             is Resource.Idle -> {
                 // Do nothing, idle state
             }
@@ -407,7 +436,7 @@ fun AdminRoomScreen(
                     viewModelBooking.resetUpdateState()
                     viewModelBooking.resetUpdateBookingState()
                     viewModel.fetchRooms(buildingId)
-                    selectedRoomNumber=null
+                    selectedRoomNumber = null
                 }
             }
 
@@ -419,7 +448,6 @@ fun AdminRoomScreen(
 
             }
         }
-
 
 
     }
@@ -543,7 +571,7 @@ private fun RoomSection(
     viewModel: RoomsViewModel,
     buildingId: Int,
     selectedRoomNumber: String?,
-    onRoomSelected: (String?, Int?,String?) -> Unit,
+    onRoomSelected: (String?, Int?, String?) -> Unit,
     showDialog: (Boolean) -> Unit,
 ) {
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
@@ -581,10 +609,10 @@ private fun RoomSection(
                                 columns = GridCells.Adaptive(100.dp),
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             ) {
-                                items(rooms,key = {it.room_id}) { room ->
+                                items(rooms, key = { it.room_id }) { room ->
                                     RoomAdminItem(
                                         modifier = Modifier.padding(
-                                           5.dp
+                                            5.dp
                                         ),
                                         room = room,
                                         isSelected = selectedRoomNumber == room.room_number,
@@ -629,7 +657,6 @@ private fun RoomSection(
                 }
             }
         )
-
 
 
     }
@@ -722,38 +749,43 @@ fun LoadingShimmerEffect() {
 
             ) {
                 Row(Modifier.padding(10.dp)) {
-                    Box(modifier = Modifier
-                        .size(height = 80.dp, width = 80.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .shimmerEffect())
+                    Box(
+                        modifier = Modifier
+                            .size(height = 80.dp, width = 80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
-                        Box(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(20.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .shimmerEffect())
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
                         Spacer(modifier = Modifier.height(5.dp))
-                        Box(modifier = Modifier
-                            .width(100.dp)
-                            .height(20.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .shimmerEffect())
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
                         Spacer(modifier = Modifier.height(5.dp))
-                        Box(modifier = Modifier
-                            .width(100.dp)
-                            .height(20.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .shimmerEffect())
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
                     }
                 }
             }
         }
-        }
     }
-
-
-
+}
 
 @Composable
 fun ButtonSection(
@@ -761,7 +793,7 @@ fun ButtonSection(
     selectedRoom: String?,
     showDialog: (Boolean) -> Unit,
     onShowDialog: () -> Unit,
-    ) {
+) {
     Spacer(modifier = Modifier.height(16.dp))
     Column(modifier = modifier.fillMaxWidth()) {
         if (selectedRoom != null) {
@@ -807,6 +839,7 @@ fun StatusDialog(
     onDateSelected: (String) -> Unit,
     onDaysChange: (String) -> Unit,
     unselectableDates: MutableList<Long>,
+    onDateRangeSelected: (String, String) -> Unit,
     modifier: Modifier
 ) {
     // State untuk menyimpan status dan waktu penyewaan yang dipilih
@@ -815,6 +848,9 @@ fun StatusDialog(
 
     var showModal by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf("Select date of birth") }
+
+    var selectedStartDate by remember { mutableStateOf<String?>(null) }
+    var selectedEndDate by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -968,7 +1004,7 @@ fun StatusDialog(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = selectedDate,
+                            text = "$selectedStartDate - $selectedEndDate",
                             color = if (selectedDate == null) white2 else white,
                             fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
                             fontSize = 14.sp,
@@ -994,7 +1030,16 @@ fun StatusDialog(
 //                    )
 
 //                    DateRangePickerSample()
-                    DatePickerWithDateSelectableDatesSample(unselectableDates)
+                    DatePickerWithDateSelectableDatesSample(
+                        unselectableDates,
+                        onDateRangeSelected = { startDate, endDate ->
+                            selectedStartDate = startDate
+                            selectedEndDate = endDate
+                            onDateRangeSelected(selectedStartDate!!, selectedEndDate!!)
+                            Log.d("DATE",selectedStartDate!!)
+                            showModal = false
+                        },
+                        onDismiss = { showModal = false })
 
                 }
 
@@ -1291,33 +1336,18 @@ fun DateRangePickerSample() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerWithDateSelectableDatesSample(
-    unselectableDates: MutableList<Long>
+    unselectableDates: MutableList<Long>,
+    onDateRangeSelected: (String, String) -> Unit,
+    onDismiss: () -> Unit
 ) {
-
     val datePickerState =
-        rememberDatePickerState(
+        rememberDateRangePickerState(
             selectableDates =
             object : SelectableDates {
                 // Cek apakah tanggal tersebut ada dalam daftar tanggal yang tidak bisa dipilih
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        val dayOfWeek =
-                            Instant.ofEpochMilli(utcTimeMillis)
-                                .atZone(ZoneId.of("UTC"))
-                                .toLocalDate()
-                                .dayOfWeek
-                        utcTimeMillis !in unselectableDates &&
-                                dayOfWeek != DayOfWeek.SUNDAY &&
-                                dayOfWeek != DayOfWeek.SATURDAY
-                    } else {
-                        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-                        calendar.timeInMillis = utcTimeMillis
-                        utcTimeMillis !in unselectableDates &&
-                                calendar[Calendar.DAY_OF_WEEK] != Calendar.SUNDAY &&
-                                calendar[Calendar.DAY_OF_WEEK] != Calendar.SATURDAY
-                    }
+                    return utcTimeMillis !in unselectableDates
                 }
-
 
                 // Allow selecting dates from year 2023 forward.
                 override fun isSelectableYear(year: Int): Boolean {
@@ -1325,15 +1355,57 @@ fun DatePickerWithDateSelectableDatesSample(
                 }
             }
         )
+    var showAlertDialog by remember { mutableStateOf(false) }
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    // Hitung rentang hari yang dipilih
+                    val selectedStart = datePickerState.selectedStartDateMillis
+                    val selectedEnd = datePickerState.selectedEndDateMillis
+                    if (selectedStart != null && selectedEnd != null) {
+                        val daysDifference = (selectedEnd - selectedStart) / (24 * 60 * 60 * 1000)
+                        if (daysDifference > 2) {
+                            // Jika lebih dari 3 hari, tampilkan pesan
+                            showAlertDialog = true
+                        } else {
+                            // Konversi timestamp ke format string
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val startDateStr = dateFormat.format(Date(selectedStart))
+                            val endDateStr = dateFormat.format(Date(selectedEnd))
 
-    Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            // Kirim nilai tanggal yang dipilih dalam format string
+                            onDateRangeSelected(startDateStr, endDateStr)
+                            onDismiss()
+                        }
+                    } else {
+                        onDismiss()
+                    }
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
     ) {
-        DatePicker(state = datePickerState)
-        Text(
-            "Selected date timestamp: ${datePickerState.selectedDateMillis ?: "no selection"}",
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+        DateRangePicker(state = datePickerState)
+    }
+
+    if (showAlertDialog) {
+        AlertDialog(
+            onDismissRequest = { showAlertDialog = false },
+            title = { Text("Peringatan") },
+            text = { Text("Anda hanya dapat memilih rentang maksimal 3 hari.") },
+            confirmButton = {
+                TextButton(onClick = { showAlertDialog = false }) {
+                    Text("OK")
+                }
+            }
         )
     }
 }

@@ -17,9 +17,9 @@ import javax.inject.Inject
 class BookingRespository @Inject constructor(
    private val authenticateApiService: ApiService
 ) {
-    suspend fun booking(room_id:Int, days:Int,date:String): Resource<BookingResponse> {
+    suspend fun booking(room_id:Int, startDate:String,enddate:String): Resource<BookingResponse> {
         return try{
-            val response = authenticateApiService.booking(BookingRequest(room_id, days,date))
+            val response = authenticateApiService.booking(BookingRequest(room_id, startDate,enddate))
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {

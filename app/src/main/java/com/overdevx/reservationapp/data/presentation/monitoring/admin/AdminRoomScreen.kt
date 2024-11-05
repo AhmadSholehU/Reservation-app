@@ -125,8 +125,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AdminRoomScreen(
@@ -140,6 +138,7 @@ fun AdminRoomScreen(
     // State untuk menyimpan ruangan yang dipilih
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     var days_change by remember { mutableStateOf(0) }
     var room_id by remember { mutableStateOf(0) }
@@ -294,14 +293,15 @@ fun AdminRoomScreen(
             }
 
             is Resource.Success -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = "Update Status successful",
-                        duration = SnackbarDuration.Short
-                    )
-                    viewModelBooking.resetBookingState()
-                    viewModel.fetchRooms(buildingId)
-                    selectedRoomNumber = null
+                showSuccessDialog = true
+                if (showSuccessDialog) {
+                    SuccessDialog(
+                        onDismiss = { showDialog = false },
+                        onClick = {
+                            viewModelBooking.resetBookingState()
+                            viewModel.fetchRooms(buildingId)
+                            selectedRoomNumber = null
+                        })
                 }
             }
 
@@ -323,17 +323,17 @@ fun AdminRoomScreen(
             }
 
             is Resource.Success -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = "Update Status successful",
-                        duration = SnackbarDuration.Short
-                    )
-                    viewModelBooking.resetBookingState()
-                    viewModelBooking.resetUpdateState()
-                    viewModel.fetchRooms(buildingId)
-                    selectedRoomNumber = null
-                }
+                showSuccessDialog = true
+                SuccessDialog(
+                    onDismiss = { showDialog = false },
+                    onClick = {
+                        viewModelBooking.resetBookingState()
+                        viewModelBooking.resetUpdateState()
+                        viewModel.fetchRooms(buildingId)
+                        selectedRoomNumber = null
+                    })
             }
+
 
             is Resource.ErrorMessage -> {
                 Text("Error: ${(updateRoomState as Resource.ErrorMessage).message}")
@@ -353,7 +353,6 @@ fun AdminRoomScreen(
 
                 // Extract booking_room_id from the data
                 booking_room_id = bookingData?.data?.booking_room_id ?: 0
-
             }
 
             is Resource.Error -> {
@@ -602,18 +601,19 @@ private fun RoomSection(
                 is Resource.Success -> {
                     val rooms = (roomState as Resource.Success<List<Room>>).data
                     if (rooms != null) {
-                        if (rooms.isEmpty()) {
+                        // Filter hanya untuk room dengan status "available"
+                        val availableRooms = rooms.filter { it.status_name != "booked" }
+
+                        if (availableRooms.isEmpty()) {
                             EmptyItem()
                         } else {
                             LazyVerticalGrid(
                                 columns = GridCells.Adaptive(100.dp),
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             ) {
-                                items(rooms, key = { it.room_id }) { room ->
+                                items(availableRooms, key = { it.room_id }) { room ->
                                     RoomAdminItem(
-                                        modifier = Modifier.padding(
-                                            5.dp
-                                        ),
+                                        modifier = Modifier.padding(5.dp),
                                         room = room,
                                         isSelected = selectedRoomNumber == room.room_number,
                                         onClick = {
@@ -740,7 +740,7 @@ fun LoadingShimmerEffect() {
         )
     }
     LazyColumn {
-        items(5) {
+        items(8) {
             Row(
                 Modifier
                     .fillMaxSize()
@@ -895,102 +895,15 @@ fun StatusDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (selectedStatus == "Terbooking") {
-                    Text(
-                        text = "Waktu Penyewaan",
-                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                        fontSize = 16.sp,
-                        color = secondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        BasicTextField(
-                            value = rentalDuration,
-                            onValueChange = {
-                                rentalDuration = it
-
-                            },
-                            modifier = Modifier
-                                .size(50.dp)
-                                .border(
-                                    1.dp,
-                                    secondary,
-                                    RoundedCornerShape(4.dp)
-                                ) // Untuk memberikan tampilan seperti TextField
-                                .padding(8.dp), // Padding agar teks tidak menempel ke border
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                color = secondary,
-                                textAlign = TextAlign.Center,
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                fontSize = 16.sp,
-                            )
-                        ) { innerTextField ->
-                            Box(
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (rentalDuration.isEmpty()) {
-                                    Text(
-                                        text = "0",
-                                        color = secondary,
-                                        textAlign = TextAlign.Center,
-                                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                        fontSize = 16.sp,
-                                    ) // Placeholder
-                                }
-                                innerTextField() // Menampilkan konten dari BasicTextField
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Column(modifier = Modifier) {
-                            IconButton(
-                                onClick = {
-                                    rentalDuration =
-                                        (rentalDuration.toIntOrNull() ?: 2).plus(1).toString()
-                                    onDaysChange(rentalDuration)
-                                },
-                                modifier = Modifier.size(30.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardArrowUp,
-                                    contentDescription = "Up",
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    // Logika untuk mengurangi durasi
-                                    rentalDuration =
-                                        (rentalDuration.toIntOrNull()?.takeIf { it > 1 }
-                                            ?: 2).minus(1)
-                                            .toString()
-                                },
-                                modifier = Modifier.size(30.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardArrowDown,
-                                    contentDescription = "Down",
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
-                        }
-                    }
                     Spacer(modifier = Modifier.height(5.dp))
                     Row(
                         modifier = Modifier
-
                             .fillMaxWidth()
                             .height(55.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(secondary)
                             .padding(5.dp)
+                            .clickable { showModal = true }
                     )
                     {
                         Spacer(modifier = Modifier.width(8.dp))
@@ -1004,13 +917,16 @@ fun StatusDialog(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "$selectedStartDate - $selectedEndDate",
+                            text = if (selectedStartDate != null && selectedEndDate != null) {
+                                "($selectedStartDate) - ($selectedEndDate)"
+                            } else {
+                                "Pilih tanggal penyewaan"
+                            },
                             color = if (selectedDate == null) white2 else white,
                             fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
                             fontSize = 14.sp,
                             modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .clickable { showModal = true },
+                                .align(Alignment.CenterVertically),
 
                             )
                     }
@@ -1036,7 +952,7 @@ fun StatusDialog(
                             selectedStartDate = startDate
                             selectedEndDate = endDate
                             onDateRangeSelected(selectedStartDate!!, selectedEndDate!!)
-                            Log.d("DATE",selectedStartDate!!)
+                            Log.d("DATE", selectedStartDate!!)
                             showModal = false
                         },
                         onDismiss = { showModal = false })
@@ -1090,6 +1006,71 @@ fun StatusDialog(
         )
 
 
+}
+
+@Composable
+private fun SuccessDialog(
+    onDismiss: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(Modifier.fillMaxWidth()) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_success),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .align(Alignment.CenterHorizontally)
+
+                )
+            }
+        },
+        text = {
+            Column(Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Status Ruang \n" +
+                            "Berhasil Diperbarui",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = secondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        },
+        confirmButton = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        onClick()
+                        onDismiss()
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = secondary,
+                    ),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                        .width(200.dp)
+                ) {
+                    Text(
+                        text = "OKE",
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 16.sp,
+                        color = white,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                    )
+                }
+
+            }
+
+        },
+        containerColor = white,
+        shape = RoundedCornerShape(10.dp)
+    )
 }
 
 @Composable

@@ -72,6 +72,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.HomeControlScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -134,7 +135,7 @@ class MainActivity : ComponentActivity() {
                     showBottomBar = false
                 }
                 composable<HomeRoute> {
-                    HomeUserScreen(onClick = { id, deskripsi, roomName, harga, jumlahKamar,rating,foto ->
+                    HomeUserScreen(onClick = { id, deskripsi, roomName, harga, jumlahKamar, rating, foto ->
                         navController.navigate(
                             DetailHomeUserRoute(
                                 id,
@@ -147,10 +148,38 @@ class MainActivity : ComponentActivity() {
                             )
                         )
 
-                    }
-                    , modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
+                    }, modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
                 }
                 composable<ControlRoute> {
+                    HomeScreen(
+                        modifier = Modifier.padding(
+                            start = 10.dp,
+                            end = 10.dp,
+                            bottom = innerPadding.calculateBottomPadding()
+                        ),
+                        onClick = { buildingId, buildingName ->
+                            if (buildingId == 3) {
+                                navController.navigate(
+                                    RoomsRouteAdminC(
+                                        id = buildingId,
+                                        name = buildingName
+                                    )
+                                )
+                            } else {
+                                navController.navigate(
+                                    RoomsRouteAdmin(
+                                        id = buildingId,
+                                        name = buildingName
+                                    )
+                                )
+                            }
+                        },
+                        onNavigateBack = {
+                            navController.navigateUp()
+                        }
+                    )
+                }
+                composable<HomeControlRoute> {
                     val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
                     if (token2.isNullOrEmpty()) {
                         Access(
@@ -161,35 +190,26 @@ class MainActivity : ComponentActivity() {
                         )
 
                     } else {
-                        HomeScreen(
+                        HomeControlScreen(
                             modifier = Modifier.padding(
-                                end = 16.dp,
-                                start = 16.dp,
                                 bottom = innerPadding.calculateBottomPadding()
                             ),
-                            onClick = { buildingId, buildingName ->
-                                if (buildingId == 3) {
-                                    navController.navigate(
-                                        RoomsRouteAdminC(
-                                            id = buildingId,
-                                            name = buildingName
-                                        )
-                                    )
-                                } else {
-                                    navController.navigate(
-                                        RoomsRouteAdmin(
-                                            id = buildingId,
-                                            name = buildingName
-                                        )
-                                    )
-                                }
-                            },
                             onLogoutClick = {
                                 navController.navigate(MonitoringRoute) {
                                     popUpTo<HomeRoute> { inclusive = true }
                                 }
+                            },
+                            onMenu1Click = {
+                                navController.navigate(ControlRoute)
+                            },
+                            onMenu2Click = {
+                                navController.navigate(MonitoringRoute)
+                            },
+                            onMenu3Click = {
+                                navController.navigate(MonitoringRoute)
                             }
                         )
+
                     }
                     showBottomBar = true
                 }
@@ -372,6 +392,9 @@ data object LoginRoute
 data object HomeRoute
 
 @Serializable
+data object HomeControlRoute
+
+@Serializable
 data object ControlRoute
 
 @Serializable
@@ -405,7 +428,7 @@ data class DetailHomeUserRoute(
     val harga: Int,
     val jumlah_kamar: Int,
     val rating: String,
-    val foto:String
+    val foto: String
 )
 
 @Serializable
@@ -426,10 +449,10 @@ sealed class BottomScreens<T>(
     )
 
     @Serializable
-    data object Control : BottomScreens<ControlRoute>(
+    data object Control : BottomScreens<HomeControlRoute>(
         name = "Control",
         icon = R.drawable.ic_settings_outline,
-        route = ControlRoute,
+        route = HomeControlRoute,
         selectedIconResId = R.drawable.ic_settings_filled,
         unselectedIconResId = R.drawable.ic_settings_outline
     )

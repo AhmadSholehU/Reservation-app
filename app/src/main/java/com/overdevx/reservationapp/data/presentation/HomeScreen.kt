@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -49,6 +51,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -57,6 +60,7 @@ import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Building
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
 import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.primary
@@ -71,8 +75,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onClick: (Int,String) -> Unit,
-    onLogoutClick: () -> Unit,
+    onClick: (Int, String) -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: BuildingViewModel = hiltViewModel()
 ) {
     val buildingState by viewModel.buildingState.collectAsStateWithLifecycle()
@@ -83,86 +87,139 @@ fun HomeScreen(
         isRefreshing = true
         coroutineScope.launch {
             delay(2000)
-           viewModel.fetchBuilding()
+            viewModel.fetchBuilding()
             isRefreshing = false
         }
     }
+    val buildingImages = mapOf(
+        1 to R.drawable.img_a, // building_id to image resource
+        2 to R.drawable.img_b,
+        3 to R.drawable.img_lainya
+    )
 
-        Column(modifier = modifier.fillMaxSize()) {
-            HeaderSection(buildingViewModel = viewModel, onLogoutClick = { onLogoutClick() })
-            Spacer(modifier = Modifier.height(20.dp))
-            PullToRefreshBox(
-                state = state,
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                ) {
-                when (buildingState) {
-                    is Resource.Loading -> {
-                       Loading()
-                    }
+    val buildingRoomCounts = mapOf(
+        1 to "12 Kamar",
+        2 to "15 Kamar",
+        3 to "10 Kamar"
+    )
 
-                    is Resource.Success -> {
-                        val buildings = (buildingState as Resource.Success<List<Building>>).data
-                        if (buildings != null) {
-                            if (buildings.isEmpty()) {
-                                Text(text = "No building available")
-                            } else {
-                                LazyColumn(
-                                    modifier = modifier
-                                        .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
-                                        .background(white)
-                                        .padding(10.dp)
-                                ) {
-                                    items(buildings, key = { it.building_id }) { building ->
-                                        BuildingItem(
-                                            onClick = {
-                                                onClick(
-                                                    building.building_id,
-                                                    building.name
-                                                )
-                                            },
-                                            building = building
-                                        )
-                                    }
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopBarSection(
+            onNavigateBack = { onNavigateBack() },
+            modifier = Modifier.padding(start = 10.dp, end = 10.dp)
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        PullToRefreshBox(
+            state = state,
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+        ) {
+            when (buildingState) {
+                is Resource.Loading -> {
+                    LoadingShimmerEffect()
+                }
+
+                is Resource.Success -> {
+                    val buildings = (buildingState as Resource.Success<List<Building>>).data
+                    if (buildings != null) {
+                        if (buildings.isEmpty()) {
+                            Text(text = "No building available")
+                        } else {
+                            LazyColumn(
+                                modifier = modifier
+                                    .fillMaxSize()
+                                    .padding(10.dp)
+
+                            ) {
+                                items(buildings, key = { it.building_id }) { building ->
+                                    val imageResId = buildingImages[building.building_id] ?: R.drawable.img_placeholder
+                                    val roomCount = buildingRoomCounts[building.building_id] ?: "Unknown Rooms"
+
+                                    BuildingItem(
+                                        onClick = {
+                                            onClick(
+                                                building.building_id,
+                                                building.name
+                                            )
+                                        },
+                                        building = building,
+                                        imageResId = imageResId,
+                                        roomCount = roomCount
+                                    )
                                 }
-
                             }
 
-
                         }
-                    }
-
-                    is Resource.ErrorMessage -> {
-                        val errorMessage = (buildingState as Resource.ErrorMessage).message
-                        Text(text = "Error: $errorMessage")
-                        Log.e("HomeScreen", "Error: $errorMessage")
-                    }
-
-                    is Resource.Error -> {
-
-                        // Handle error dari Exception
-                        val exceptionMessage =
-                            (buildingState as Resource.Error).exception.message
-                                ?: "Unknown error occurred"
-                            ErrorItem(errorMsg = exceptionMessage)
-
 
 
                     }
+                }
+
+                is Resource.ErrorMessage -> {
+                    val errorMessage = (buildingState as Resource.ErrorMessage).message
+                    Text(text = "Error: $errorMessage")
+                    Log.e("HomeScreen", "Error: $errorMessage")
+                }
+
+                is Resource.Error -> {
+
+                    // Handle error dari Exception
+                    val exceptionMessage =
+                        (buildingState as Resource.Error).exception.message
+                            ?: "Unknown error occurred"
+                    ErrorItem(errorMsg = exceptionMessage)
 
 
-                    is Resource.Idle -> {
+                }
+
+
+                is Resource.Idle -> {
 //                        LaunchedEffect(Unit) {
 //                            viewModel.fetchBuilding()
 //                        }
-                    }
-
-                    else -> {}
-
                 }
+
+                else -> {}
+
             }
         }
+    }
 
+}
+
+@Composable
+private fun TopBarSection(
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxWidth()) {
+        Spacer(modifier = Modifier.width(16.dp))
+        IconButton(
+            onClick = { onNavigateBack() },
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .size(40.dp),
+            colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_back),
+                contentDescription = null,
+                tint = secondary
+            )
+        }
+        Row(modifier = Modifier.align(Alignment.Center)) {
+            Text(
+                text = "Control Ruang",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                fontSize = 22.sp,
+                color = secondary,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
+
+    }
 }
 
 @Composable
@@ -309,7 +366,11 @@ fun HeaderSection(
 }
 
 @Composable
-fun BuildingItem(onClick: (Int) -> Unit, building: Building) {
+fun BuildingItem(
+    onClick: (Int) -> Unit,
+    building: Building,
+    imageResId: Int,
+    roomCount: String ) {
     Box(modifier = Modifier
         .fillMaxWidth()
         .padding(10.dp)
@@ -323,38 +384,51 @@ fun BuildingItem(onClick: (Int) -> Unit, building: Building) {
             modifier = Modifier.fillMaxSize(),
             alignment = Alignment.BottomEnd
         )
-        Row {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .align(Alignment.Center)) {
             Spacer(modifier = Modifier.width(10.dp))
             Image(
-                painter = painterResource(id = R.drawable.ic_circle),
+                painter = painterResource(imageResId),
                 contentDescription = null,
-                modifier = Modifier.size(height = 150.dp, width = 10.dp)
+                alignment = Alignment.Center,
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .size(100.dp)
+
             )
             Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.weight(1f))
             Column(modifier = Modifier.align(Alignment.CenterVertically)) {
                 Text(
-                    text = building.name,
+                    text = "Gedung",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 20.sp,
                     color = white,
                     modifier = Modifier
                 )
                 Text(
-                    text = "12 Kamar",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 14.sp,
+                    text = building.name,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 30.sp,
                     color = white,
                     modifier = Modifier
                 )
+
+                Row(modifier = Modifier.clip(RoundedCornerShape(20.dp))
+                    .background(white.copy(0.5f))
+                    .padding(start = 5.dp, end = 5.dp)){
+                    Text(
+                        text = roomCount,
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                        fontSize = 14.sp,
+                        color = white,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Image(
-                painter = painterResource(id = R.drawable.ic_building),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(60.dp)
-                    .align(Alignment.CenterVertically)
-            )
             Spacer(modifier = Modifier.width(50.dp))
         }
 

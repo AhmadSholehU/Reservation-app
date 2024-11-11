@@ -140,7 +140,7 @@ fun AdminRoomScreenC(
                         // Differentiate between update and create booking based on initial and selected statuses
                         if (current_room_status == "booked" && room_status == "Terbooking") {
                             // Use update booking endpoint if already booked
-                            viewModelBooking.updateBookingRoom(booking_room_id, days_change, selected_date)
+
                         } else if (current_room_status != "booked" && room_status == "Terbooking") {
                             // Use create booking endpoint if status changes to booked
                             viewModelBooking.bookRoom(room_id, startDate, endDate)

@@ -72,6 +72,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.HomeControlScreen
 
 @AndroidEntryPoint
@@ -203,7 +204,7 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate(ControlRoute)
                             },
                             onMenu2Click = {
-                                navController.navigate(MonitoringRoute)
+                                navController.navigate(BookingListRoute)
                             },
                             onMenu3Click = {
                                 navController.navigate(MonitoringRoute)
@@ -314,6 +315,14 @@ class MainActivity : ComponentActivity() {
                         onNavigateBack = { navController.navigateUp() },
                         modifier = Modifier
                             .padding(bottom = innerPadding.calculateBottomPadding())
+                    )
+                }
+
+                composable<BookingListRoute> {
+                    BookingListScreen(
+                        modifier = Modifier
+                            .padding(bottom = innerPadding.calculateBottomPadding()),
+                        onNavigateBack = { navController.navigateUp() }
                     )
                 }
             }
@@ -430,6 +439,9 @@ data class DetailHomeUserRoute(
     val rating: String,
     val foto: String
 )
+
+@Serializable
+data object BookingListRoute
 
 @Serializable
 sealed class BottomScreens<T>(

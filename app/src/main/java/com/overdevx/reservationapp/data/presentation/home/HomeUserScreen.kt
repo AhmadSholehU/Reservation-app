@@ -31,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +72,7 @@ import com.overdevx.reservationapp.utils.replaceDomain
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +93,7 @@ fun HomeUserScreen(
             isRefreshing = false
         }
     }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -235,14 +238,17 @@ private fun Item(
     foto:String,
     modifier: Modifier = Modifier
 ) {
+    val fotoList: List<String> = remember {
+        Json.decodeFromString(foto)
+    }
     Row(modifier = Modifier
         .fillMaxWidth()
         .padding(5.dp)
         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
         .background(white)
         .clickable { onClick() }) {
-        val newDomain = "192.168.1.109"
-        val newfoto = replaceDomain(foto,newDomain)
+        val newDomain = "192.168.39.85"
+        val newfoto = replaceDomain(fotoList[0],newDomain)
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(newfoto)

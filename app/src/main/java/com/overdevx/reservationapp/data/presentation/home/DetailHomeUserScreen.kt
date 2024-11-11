@@ -53,12 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import coil.compose.AsyncImage
+import com.overdevx.reservationapp.BuildConfig
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.utils.replaceDomain
+import kotlinx.serialization.json.Json
 import kotlin.math.absoluteValue
 
 @Composable
@@ -132,7 +134,11 @@ private fun MainSection(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val state = rememberPagerState { 3 }
+    // Parsing JSON string menjadi List<String> menggunakan kotlinx.serialization
+    val fotoList: List<String> = remember {
+        Json.decodeFromString(foto)
+    }
+    val state = rememberPagerState { fotoList.size}
 
     Column(
         modifier = Modifier
@@ -164,8 +170,8 @@ private fun MainSection(
                         )
                     }
             ) {
-                val newDomain = "192.168.1.109"
-                val newfoto = replaceDomain(foto,newDomain)
+                val newDomain = "192.168.39.85"
+                val newfoto = replaceDomain(fotoList[page],newDomain)
                 AsyncImage(
                     model = newfoto,
                     contentDescription = null,
@@ -321,4 +327,19 @@ private fun MainSection(
     }
 }
 
+@Composable
+private fun FasilitasSection (modifier: Modifier = Modifier) {
+    Column(modifier = Modifier) {
+        Text(
+            text = "Fasilitas Kamar :",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+            fontSize = 16.sp,
+            letterSpacing = 5.sp,
+            color = secondary,
+            textAlign = TextAlign.Center,
+        )
+
+
+    }
+}
 

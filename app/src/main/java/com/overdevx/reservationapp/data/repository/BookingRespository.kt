@@ -1,6 +1,7 @@
 package com.overdevx.reservationapp.data.repository
 
 import android.util.Log
+import com.overdevx.reservationapp.data.model.BookingList
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoom
@@ -80,9 +81,9 @@ class BookingRespository @Inject constructor(
     }
 
 
-    suspend fun updateBookingRoom(bookingRoomId:Int,days: Int,date:String):Resource<BookingRoomResponse>{
+    suspend fun updateBookingRoom(bookingRoomId:Int,start_date: String,end_date:String):Resource<BookingRoomResponse>{
         return try {
-            val request = UpdateBookingRequest(days,date)
+            val request = UpdateBookingRequest(start_date,end_date)
             val response = authenticateApiService.updateBooking(bookingRoomId, request)
             if (response.isSuccessful) {
                 val body = response.body()
@@ -121,4 +122,20 @@ class BookingRespository @Inject constructor(
             Resource.Error(e)
         }
     }
+
+    suspend fun getBookingList(): Resource<List<BookingList>> {
+        return try {
+            val response = authenticateApiService.getBookinglist()
+            if (response.status == "success") {
+                Resource.Success(response.data)
+            } else {
+                Resource.ErrorMessage(response.message)
+            }
+        } catch (e: Exception) {
+            Log.e("RetrofitError", "Error: ${e.message}")
+            Resource.Error(e)
+        }
+    }
+
+
 }

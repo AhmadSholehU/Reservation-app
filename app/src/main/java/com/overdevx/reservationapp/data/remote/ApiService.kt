@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.data.remote
 
+import com.overdevx.reservationapp.data.model.BookingListResponse
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
@@ -69,6 +70,10 @@ interface ApiService {
 
     @GET("booking-rooms/cektanggal/{id}")
     suspend fun getKetersediaan(@Path("id") roomId: Int): KetersediaanResponse
+
+    @GET("booking-rooms")
+    suspend fun getBookinglist(): BookingListResponse
+
 
 
 

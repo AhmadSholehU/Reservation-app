@@ -20,6 +20,6 @@ data class BookingRequest(
 )
 
 data class UpdateBookingRequest(
-    val days: Int,
-    val date: String
+    val start_date: String,
+    val end_date: String
 )

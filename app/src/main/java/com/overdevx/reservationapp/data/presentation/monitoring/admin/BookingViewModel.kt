@@ -2,9 +2,8 @@ package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.overdevx.reservationapp.data.model.BookingList
 import com.overdevx.reservationapp.data.model.BookingResponse
-import com.overdevx.reservationapp.data.model.BookingRoom
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
@@ -13,7 +12,6 @@ import com.overdevx.reservationapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,6 +40,9 @@ class BookingViewModel @Inject constructor(
     private val _getKetersediaanState = MutableStateFlow<Resource<KetersediaanResponse>>(Resource.Idle)
     val getKetersediaanState: StateFlow<Resource<KetersediaanResponse>> = _getKetersediaanState
 
+    private val _getBookingListState = MutableStateFlow<Resource<List<BookingList>>>(Resource.Idle)
+    val getBookingListState: StateFlow<Resource<List<BookingList>>> = _getBookingListState
+
 
     fun bookRoom(roomId: Int, startDate: String,endDate:String) {
         viewModelScope.launch {
@@ -67,10 +68,10 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    fun updateBookingRoom(bookingRoomId:Int,days: Int,date:String){
+    fun updateBookingRoom(bookingRoomId:Int,start_date: String,end_date:String){
         viewModelScope.launch {
             _updatatebookingState.value=Resource.Loading
-            val result=bookingRepository.updateBookingRoom(bookingRoomId,days,date)
+            val result=bookingRepository.updateBookingRoom(bookingRoomId,start_date,end_date)
             _updatatebookingState.value=result
         }
     }
@@ -80,6 +81,14 @@ class BookingViewModel @Inject constructor(
             _getKetersediaanState.value = Resource.Loading
             val result = bookingRepository.getKetersediaan(roomId)
             _getKetersediaanState.value = result  // Update the state with the fetched data
+        }
+    }
+
+    fun getBookingList() {
+        viewModelScope.launch {
+            _getBookingListState.value = Resource.Loading
+            val result = bookingRepository.getBookingList()
+            _getBookingListState.value = result  // Update the state with the fetched data
         }
     }
 

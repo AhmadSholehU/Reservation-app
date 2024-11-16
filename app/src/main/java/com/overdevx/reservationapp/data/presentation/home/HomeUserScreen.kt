@@ -247,7 +247,7 @@ private fun Item(
         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
         .background(white)
         .clickable { onClick() }) {
-        val newDomain = "192.168.39.85"
+        val newDomain = "192.168.1.108"
         val newfoto = replaceDomain(fotoList[0],newDomain)
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)

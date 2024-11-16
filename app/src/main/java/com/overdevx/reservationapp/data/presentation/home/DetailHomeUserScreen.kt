@@ -1,15 +1,17 @@
 package com.overdevx.reservationapp.data.presentation.home
 
-import androidx.compose.foundation.Image
+import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,23 +20,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,22 +49,29 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.overdevx.reservationapp.BuildConfig
 import com.overdevx.reservationapp.R
+import com.overdevx.reservationapp.data.model.Room
+import com.overdevx.reservationapp.data.presentation.RoomsViewModel
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.EmptyItem
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.utils.Resource
+import com.overdevx.reservationapp.utils.formatCurrency
 import com.overdevx.reservationapp.utils.replaceDomain
 import kotlinx.serialization.json.Json
 import kotlin.math.absoluteValue
@@ -70,20 +83,107 @@ fun DetailHomeUserScreen(
     rating: String,
     deskripsi: String,
     jumlahKamar: Int,
-    foto:String,
+    foto: String,
     onClick: () -> Unit,
     onNavigateBack: () -> Unit,
+    viewModel: RoomsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
+    var buildingId by remember { mutableStateOf(1) }
+    LaunchedEffect(Unit) {
+        viewModel.fetchRooms(buildingId)
+    }
     Column(modifier = modifier.padding(start = 16.dp, end = 16.dp)) {
-        TopBarSection(onNavigateBack = { onNavigateBack() })
+        TopBarSection(
+            onNavigateBack = { onNavigateBack() },
+            modifier = Modifier.padding(start = 10.dp)
+        )
         Spacer(modifier = Modifier.height(10.dp))
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(modifier = Modifier) {
             item {
-                MainSection(roomName, harga, rating, deskripsi, jumlahKamar,foto, onClick = {onClick()})
+                MainSection(
+                    roomName,
+                    harga,
+                    rating,
+                    deskripsi,
+                    jumlahKamar,
+                    foto,
+//                    selectedBuilding = {
+//                        if (it == "Gedung Asrama A") {
+//                            buildingId = 1
+//                            viewModel.fetchRooms(buildingId)
+//                        } else {
+//                            buildingId = 2
+//                            viewModel.fetchRooms(buildingId)
+//                        }
+//                    }
+                )
             }
         }
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "$jumlahKamar Kamar Tersedia",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 16.sp,
+            color = primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.End)
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        Box(
+            modifier = Modifier
+                .padding(bottom = 16.dp)
 
+        ) {
+            Button(
+                onClick = {
+                    showDialog = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .align(Alignment.BottomCenter),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = primary,
+                )
+            ) {
+                Text(
+                    text = "PESAN SEKARANG",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 18.sp,
+                    letterSpacing = 5.sp,
+                    color = white,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+
+        }
+
+        if (showDialog) {
+            PesanDialog(
+                selectedRoomNumber = selectedRoomNumber,
+                onDismiss = { showDialog = false },
+                onBooking = { },
+                onBuildingSelected = { buildingName ->
+                    if (buildingName == "Gedung Asrama A") {
+                        buildingId = 1
+                        viewModel.fetchRooms(buildingId)
+                    } else {
+                        buildingId = 2
+                        viewModel.fetchRooms(buildingId)
+                    }
+                },
+                onRoomSelected = { selectedRoom, roomId, roomStatus ->
+                    selectedRoomNumber = selectedRoom
+                },
+                showDialog = { false },
+                modifier = Modifier
+            )
+        }
     }
 }
 
@@ -130,20 +230,21 @@ private fun MainSection(
     rating: String,
     deskripsi: String,
     jumlahKamar: Int,
-    foto:String,
-    onClick: () -> Unit,
+    foto: String,
     modifier: Modifier = Modifier
 ) {
+    var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     // Parsing JSON string menjadi List<String> menggunakan kotlinx.serialization
     val fotoList: List<String> = remember {
         Json.decodeFromString(foto)
     }
-    val state = rememberPagerState { fotoList.size}
+    var showDialog by remember { mutableStateOf(false) }
+    val state = rememberPagerState { fotoList.size }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp)
+
     ) {
         HorizontalPager(
             state = state,
@@ -164,14 +265,14 @@ private fun MainSection(
 
                         // We animate the alpha, between 50% and 100%
                         alpha = lerp(
-                            start = 0.5f,
+                            start = 0.3f,
                             stop = 1f,
                             fraction = 1f - pageOffset.coerceIn(0f, 1f)
                         )
                     }
             ) {
                 val newDomain = "192.168.39.85"
-                val newfoto = replaceDomain(fotoList[page],newDomain)
+                val newfoto = replaceDomain(fotoList[page], newDomain)
                 AsyncImage(
                     model = newfoto,
                     contentDescription = null,
@@ -213,7 +314,7 @@ private fun MainSection(
                 Text(
                     text = "$roomName",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 20.sp,
+                    fontSize = 30.sp,
                     color = secondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -235,19 +336,13 @@ private fun MainSection(
                         modifier = Modifier
                     )
                 }
-                Text(
-                    text = "$jumlahKamar Kamar Tersedia",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 16.sp,
-                    color = gray,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                )
+
             }
             Spacer(modifier = Modifier.weight(1f))
             Column(modifier = Modifier) {
+                val formatHarga = formatCurrency(harga)
                 Text(
-                    text = "$harga",
+                    text = "Rp$formatHarga",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 20.sp,
                     color = secondary,
@@ -262,64 +357,66 @@ private fun MainSection(
                 )
             }
         }
-
+        Spacer(modifier = Modifier.height(16.dp))
+        FasilitasSection()
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "$deskripsi",
             fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-            fontSize = 20.sp,
-            color = secondary,
+            fontSize = 18.sp,
+            color = gray,
             textAlign = TextAlign.Justify,
             modifier = Modifier
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 10.dp, top = 10.dp)
+        Spacer(modifier = Modifier.height(16.dp))
+
+    }
+
+
+}
+
+@Composable
+private fun FasilitasSection(modifier: Modifier = Modifier) {
+    val fasilitasList = listOf(
+        Pair("AC", R.drawable.ic_ac),
+        Pair("Wifi", R.drawable.ic_wifi),
+        Pair("Parkir", R.drawable.ic_parkir),
+        Pair("Fasilitas Rapat", R.drawable.ic_rapat)
+    )
+
+    Column(modifier = Modifier) {
+        Text(
+            text = "Fasilitas Kamar :",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 16.sp,
+            color = secondary,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp) // Jarak antar item
         ) {
-            Button(
-                onClick = {onClick()},
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = primary,
-                )
-            ) {
-                Text(
-                    text = "PESAN SEKARANG",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 18.sp,
-                    letterSpacing = 5.sp,
-                    color = white,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { },
-                modifier = modifier
-                    .border(
-                        width = 1.dp, // ketebalan border
-                        color = primary, // warna border
-                        shape = RoundedCornerShape(16.dp) // corner radius
+            items(fasilitasList) { fasilitas ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = fasilitas.second), // Ikon fasilitas
+                        contentDescription = null,
+                        tint = gray,
+                        modifier = Modifier.size(20.dp)
                     )
-                    .clip(RoundedCornerShape(16.dp))
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(Color.Transparent), // Warna latar tombol
-
-            ) {
-                Text(
-                    text = "CEK KETERSEDIAAN",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 16.sp,
-                    letterSpacing = 5.sp,
-                    color = primary,
-                    textAlign = TextAlign.Center,
-                )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = fasilitas.first, // Nama fasilitas
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 16.sp,
+                        color = gray,
+                        textAlign = TextAlign.Start
+                    )
+                }
             }
         }
 
@@ -328,18 +425,301 @@ private fun MainSection(
 }
 
 @Composable
-private fun FasilitasSection (modifier: Modifier = Modifier) {
-    Column(modifier = Modifier) {
-        Text(
-            text = "Fasilitas Kamar :",
-            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-            fontSize = 16.sp,
-            letterSpacing = 5.sp,
-            color = secondary,
-            textAlign = TextAlign.Center,
+private fun PesanDialog(
+    selectedRoomNumber: String?,
+    onDismiss: () -> Unit,
+    onBooking: () -> Unit,
+    viewModel: RoomsViewModel = hiltViewModel(),
+    onBuildingSelected: (String) -> Unit,
+    onRoomSelected: (String?, Int?, String?) -> Unit,
+    showDialog: (Boolean) -> Unit,
+    modifier: Modifier
+) {
+    // State untuk menyimpan status dan waktu penyewaan yang dipilih
+    var selectedStatus by remember { mutableStateOf("Gedung Asrama A") }
+    var selectedRoom by remember { mutableStateOf("") }
+    val roomState by viewModel.roomState.collectAsStateWithLifecycle()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(Modifier.fillMaxWidth()) {
+                Text(
+                    text = "DAFTAR RUANGAN",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = secondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(listOf("Gedung Asrama A", "Gedung Asrama B")) { status ->
+                        AsramaButton(
+                            text = status,
+                            isSelected = selectedStatus == status,
+                            onClick = {
+                                selectedStatus = status
+                                onBuildingSelected(status)
+                            }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                when (roomState) {
+                    is Resource.Loading -> {
+                        LoadingShimmerEffect()
+                        //RoomSkeletonGrid()
+                    }
+
+                    is Resource.Success -> {
+                        val scrollState = rememberScrollState()
+                        val rooms = (roomState as Resource.Success<List<Room>>).data
+                        if (rooms != null) {
+                            if (rooms.isEmpty()) {
+                                EmptyItem()
+                            } else {
+
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(4),
+                                    modifier = Modifier
+                                        .height(200.dp)
+
+                                ) {
+                                    items(rooms, key = { it.room_id }) { room ->
+                                        RoomItem(
+                                            modifier = Modifier.padding(5.dp),
+                                            room = room,
+                                            isSelected = selectedRoomNumber == room.room_number,
+                                            onClick = {
+                                                selectedRoom = room.room_number
+                                                onRoomSelected(
+                                                    if (selectedRoomNumber == room.room_number) null else room.room_number,
+                                                    room.room_id,
+                                                    room.status_name
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
+                    is Resource.ErrorMessage -> {
+                        val errorMessage = (roomState as Resource.ErrorMessage).message
+                        Text(text = "Error: $errorMessage")
+                        Log.e("HomeScreen", "Error: $errorMessage")
+                    }
+
+                    is Resource.Error -> {
+                        // Handle error dari Exception
+                        val exceptionMessage =
+                            (roomState as Resource.Error).exception.message
+                                ?: "Unknown error occurred"
+                        ErrorItem(errorMsg = exceptionMessage)
+                    }
+
+                    else -> {}
+                }
+            }
+        },
+
+        confirmButton = {
+
+            if (selectedRoomNumber != null) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Kamar $selectedRoom terpilih",
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 18.sp,
+                        color = secondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primary),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "KONFIRMASI PESANAN",
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 16.sp,
+                            color = white,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                        )
+                    }
+                }
+            }
+
+
+        },
+        dismissButton = {
+
+//                Column(modifier = Modifier.fillMaxWidth()) {
+//                    if(selectedRoomNumber!=null) {
+//                    Button(
+//                        onClick = onDismiss,
+//                        shape = RoundedCornerShape(10.dp),
+//                        border = BorderStroke(1.dp, secondary),
+//                        colors = ButtonDefaults.buttonColors(containerColor = white),
+//                        modifier = Modifier
+//                            .align(Alignment.CenterHorizontally)
+//                            .fillMaxWidth()
+//                    ) {
+//                        Text(
+//                            text = "BATAL",
+//                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+//                            fontSize = 16.sp,
+//                            color = secondary,
+//                            textAlign = TextAlign.Center,
+//                            modifier = Modifier
+//                        )
+//                    }
+//
+//                }
+//
+//            }
+        },
+        containerColor = white,
+        shape = RoundedCornerShape(10.dp),
+
         )
 
 
+}
+
+@Composable
+private fun RoomItem(
+    modifier: Modifier = Modifier,
+    room: Room,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val color = if (room.status_name == "booked") primary else Color.Transparent
+    val borderColor = when (room.status_name) {
+        "available" -> secondary
+        "booked" -> primary
+        else -> secondary.copy(0.5f)
+    }
+    // Warna latar belakang tergantung apakah item sedang dipilih atau tidak
+    val backgroundColor = if (isSelected) primary else color
+    val textColor = if (room.status_name == "booked") white else borderColor
+
+    Row(
+        modifier = modifier
+            .size(50.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .background(backgroundColor)
+            .clickable {
+                onClick()
+            }
+
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterVertically)
+                .padding(5.dp),
+        ) {
+            Text(
+                text = "${room.room_number} ",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 16.sp,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
     }
 }
+
+@Composable
+private fun AsramaButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = { onClick() },
+        shape = RoundedCornerShape(10.dp),
+        colors = if (isSelected) {
+            ButtonDefaults.buttonColors(containerColor = primary, contentColor = Color.White)
+        } else {
+            ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = primary
+            )
+        },
+        modifier = if (isSelected) Modifier.size(
+            height = 40.dp,
+            width = Dp.Unspecified
+        ) else Modifier
+            .border(1.dp, primary, RoundedCornerShape(10.dp))
+            .size(height = 40.dp, width = Dp.Unspecified)
+
+    ) {
+        Text(
+            text = text,
+            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+        )
+    }
+}
+
+@Composable
+private fun ButtonSection(
+    modifier: Modifier = Modifier,
+    selectedRoom: String?,
+    showDialog: (Boolean) -> Unit,
+    onShowDialog: () -> Unit,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (selectedRoom != null) {
+            Text(
+                text = "Kamar $selectedRoom terpilih",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 18.sp,
+                color = secondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onShowDialog,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = primary,
+                )
+            ) {
+                Text(
+                    text = "KONFIRMASI PESANAN",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 18.sp,
+                    letterSpacing = 5.sp,
+                    color = white,
+                )
+            }
+        }
+    }
+}
+
+
 

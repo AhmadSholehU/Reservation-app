@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
@@ -60,14 +61,14 @@ fun RoomsScreen(
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
+
     ) {
         Spacer(modifier = Modifier.height(10.dp))
-        TopBarSection(onNavigateBack={onNavigateBack()},modifier = modifier)
+        TopBarSection(onNavigateBack={onNavigateBack()},modifier = Modifier.padding(start = 16.dp, end = 16.dp))
         Spacer(modifier = Modifier.height(10.dp))
-        InfoSection(modifier = modifier.padding(start = 16.dp, end = 16.dp))
+        InfoSection(modifier = Modifier.padding(start = 16.dp, end = 16.dp))
         Spacer(modifier = Modifier.height(10.dp))
-        RoomSection(modifier = modifier.padding(start = 16.dp, end = 16.dp),viewModel,buildingId)
+        RoomSection(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),viewModel,buildingId)
     }
 
 
@@ -102,12 +103,14 @@ private fun TopBarSection(onNavigateBack: () -> Unit,modifier: Modifier) {
 }
 
 @Composable
-private fun InfoSection(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
+private fun InfoSection(modifier: Modifier) {
+    Column(modifier = modifier
+        .fillMaxWidth()
+        .padding(start = 16.dp)) {
         Text(
             text = "Kamar Gedung A- Lt 1",
             fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-            fontSize = 24.sp,
+            fontSize = 20.sp,
             color = primary,
             modifier = Modifier
         )
@@ -115,14 +118,14 @@ private fun InfoSection(modifier: Modifier = Modifier) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(16.dp)
                     .border(1.dp, secondary, RoundedCornerShape(5.dp))
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = "Available",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 color = secondary,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -131,7 +134,7 @@ private fun InfoSection(modifier: Modifier = Modifier) {
 
             Box(
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(16.dp)
                     .clip(shape = RoundedCornerShape(5.dp))
                     .background(primary)
             )
@@ -139,7 +142,7 @@ private fun InfoSection(modifier: Modifier = Modifier) {
             Text(
                 text = "Booked",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 color = primary,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -148,14 +151,14 @@ private fun InfoSection(modifier: Modifier = Modifier) {
 
             Box(
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(16.dp)
                     .border(1.dp, secondary.copy(0.5f), RoundedCornerShape(5.dp))
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = "Taken",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 color = secondary.copy(0.5f),
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -173,7 +176,7 @@ private fun RoomSection(modifier: Modifier = Modifier,viewModel: RoomsViewModel,
     }
     when(roomState){
         is Resource.Loading ->{
-            CircularProgressIndicator()
+           LoadingShimmerEffect()
         }
         is Resource.Success ->{
             val rooms = (roomState as Resource.Success<List<Room>>).data
@@ -181,8 +184,8 @@ private fun RoomSection(modifier: Modifier = Modifier,viewModel: RoomsViewModel,
                 if (rooms.isEmpty()) {
                     Text(text = "No rooms available")
                 } else {
-                    LazyVerticalGrid(columns = GridCells.Adaptive(100.dp)
-                    , modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
+                    LazyVerticalGrid(columns = GridCells.Fixed(4)
+                    , modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
                         items(rooms) { room ->
                             RoomItem(modifier = Modifier.padding(start = 5.dp, end = 5.dp, top = 20.dp),room)
                         }

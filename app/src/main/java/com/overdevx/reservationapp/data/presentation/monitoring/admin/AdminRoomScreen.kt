@@ -379,18 +379,34 @@ fun AdminRoomScreen(
                         val dateFormat =
                             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                         dateFormat.timeZone =
-                            TimeZone.getTimeZone("UTC") // Pastikan waktu dalam zona UTC
+                            TimeZone.getTimeZone("UTC+8") // Pastikan waktu dalam zona UTC
 
-                        val startDate = dateFormat.parse(ketersediaan.start_date)?.time
-                        val endDate = dateFormat.parse(ketersediaan.end_date)?.time
+                        val startDate = dateFormat.parse(ketersediaan.start_date)
+                        val endDate = dateFormat.parse(ketersediaan.end_date)
 
                         if (startDate != null && endDate != null) {
+                            val calendar = Calendar.getInstance()
+                            // Normalisasi startDate
+                            calendar.time = startDate
+                            calendar.set(Calendar.HOUR_OF_DAY, 0)
+                            calendar.set(Calendar.MINUTE, 0)
+                            calendar.set(Calendar.SECOND, 0)
+                            calendar.set(Calendar.MILLISECOND, 0)
+                            var currentDate = calendar.timeInMillis
+
+                            // Normalisasi endDate
+                            calendar.time = endDate
+                            calendar.set(Calendar.HOUR_OF_DAY, 0)
+                            calendar.set(Calendar.MINUTE, 0)
+                            calendar.set(Calendar.SECOND, 0)
+                            calendar.set(Calendar.MILLISECOND, 0)
+                            val normalizedEndDate = calendar.timeInMillis
                             // Tambahkan semua tanggal dari startDate hingga endDate
-                            var currentDate = startDate
-                            while (currentDate <= endDate) {
+                            while (currentDate <= normalizedEndDate) {
                                 unselectableDates.add(currentDate)
                                 currentDate += 24 * 60 * 60 * 1000 // Tambah satu hari dalam milidetik
                             }
+                            Log.d("DATE", unselectableDates.toString())
                         }
 
                     }
@@ -1048,7 +1064,8 @@ fun SuccessDialog(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = secondary,
                     ),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
                         .width(200.dp)
                 ) {
                     Text(
@@ -1334,6 +1351,7 @@ fun DatePickerWithDateSelectableDatesSample(
         )
     var showAlertDialog by remember { mutableStateOf(false) }
     DatePickerDialog(
+        modifier = Modifier.padding(16.dp),
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
@@ -1368,20 +1386,80 @@ fun DatePickerWithDateSelectableDatesSample(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     ) {
-        DateRangePicker(state = datePickerState)
+        DateRangePicker(
+            showModeToggle = false,
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                todayDateBorderColor = primary,
+                headlineContentColor = secondary,
+                titleContentColor = secondary,
+                currentYearContentColor = secondary,
+                selectedDayContentColor = white,
+                todayContentColor = primary,
+                dividerColor = primary,
+                dayContentColor = secondary,
+                weekdayContentColor = primary,
+                navigationContentColor = secondary,
+                selectedYearContentColor = secondary,
+                selectedYearContainerColor = primary,
+                selectedDayContainerColor = primary,
+                yearContentColor = secondary,
+                disabledDayContentColor= primary,
+                dayInSelectionRangeContainerColor= primary.copy(0.3f),
+            ))
     }
 
     if (showAlertDialog) {
         AlertDialog(
             onDismissRequest = { showAlertDialog = false },
-            title = { Text("Peringatan") },
-            text = { Text("Anda hanya dapat memilih rentang maksimal 3 hari.") },
-            confirmButton = {
-                TextButton(onClick = { showAlertDialog = false }) {
-                    Text("OK")
+            title = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_warning_date),
+                        contentDescription = null,
+                        tint = primary,
+                        modifier = Modifier
+                            .size(60.dp)
+                            .align(Alignment.CenterHorizontally)
+                    )
                 }
+                    },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Anda hanya dapat memilih rentang \n" +
+                                "tanggal 3 hari",
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                        fontSize = 18.sp,
+                        color = secondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                       onDismiss()
+                    },
+                    modifier = Modifier
+                        .height(50.dp)
+                        .fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(secondary),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Baiklah",
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 20.sp,
+                        color = white,
+                    )
+                }
+
+
             }
         )
     }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,10 +48,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.presentation.BuildingViewModel
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
+import com.overdevx.reservationapp.ui.theme.blue
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.white2
+import com.overdevx.reservationapp.ui.theme.yellow
+import com.overdevx.reservationapp.ui.theme.yellow2
 
 @Composable
 fun HomeControlScreen(
@@ -72,7 +76,7 @@ fun HomeControlScreen(
             contentScale = ContentScale.FillWidth,
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+
         )
     }
 }
@@ -270,22 +274,22 @@ private fun ContentSection(
             DashboardItem(
                 title = "Control",
                 title2 = "Ruang",
-                backgroundImage = R.drawable.img_menu_control,
+                backgroundImage = R.drawable.ic_menu_control,
                 onClick = {menu1()},
                 modifier = Modifier.weight(1.1f).height(400.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
-                DashboardItem(
+                DashboardItem2(
                     title = "Daftar",
                     title2 = "Ruang Terbooking",
-                    backgroundImage = R.drawable.img_menu_terbooking,
+                    backgroundImage = R.drawable.ic_menu_booking,
                     onClick = {menu2()},
                     modifier = Modifier.height(250.dp)
                 )
-                DashboardItem2(
+                DashboardItem3(
                     title = "Riwayat",
                     title2 = "Transaksi",
-                    backgroundImage = R.drawable.img_riwayat,
+                    backgroundImage = R.drawable.ic_menu_riwayat,
                     onClick = {menu3()},
                     modifier = Modifier.height(150.dp)
                 )
@@ -310,16 +314,18 @@ fun DashboardItem(
         modifier = modifier
             .padding(8.dp)
             .fillMaxSize()
+            .clip(RoundedCornerShape(10.dp))
+            .background(primary)
+
             .clickable { onClick() }
 
     ) {
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(10.dp))
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.align(Alignment.BottomCenter)
+
         )
         Column(modifier = Modifier.align(Alignment.TopStart)
             .padding(16.dp)) {
@@ -357,17 +363,75 @@ fun DashboardItem2(
         modifier = modifier
             .padding(8.dp)
             .fillMaxSize()
+            .clip(RoundedCornerShape(10.dp))
+            .background(blue)
+            .clickable { onClick() }
 
     ) {
         Image(
             painter = painterResource(id = backgroundImage),
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(10.dp))
+                .align(Alignment.BottomCenter)
+                .offset(-15.dp,40.dp)
+
         )
-        Column(modifier = Modifier.align(Alignment.Center)
+        Column(modifier = Modifier.align(Alignment.TopStart)
+            .padding(16.dp)) {
+            Text(
+                text = title,
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 16.sp,
+                color = white,
+                modifier = Modifier
+            )
+            Text(
+                text = title2,
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 30.sp,
+                color = white,
+                modifier = Modifier
+            )
+
+        }
+
+
+    }
+}
+
+@Composable
+fun DashboardItem3(
+    title: String,
+    title2: String,
+    backgroundImage: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .padding(8.dp)
+            .fillMaxSize()
+            .clip(RoundedCornerShape(10.dp))
+            .background(yellow2)
+            .clickable {
+                onClick()
+            }
+
+
+    ) {
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .padding(5.dp)
+                .size(70.dp)
+                .align(Alignment.CenterEnd)
+
+        )
+        Column(modifier = Modifier.align(Alignment.TopStart)
             .padding(16.dp)) {
             Text(
                 text = title,

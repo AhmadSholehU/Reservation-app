@@ -207,7 +207,7 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate(BookingListRoute)
                             },
                             onMenu3Click = {
-                                navController.navigate(MonitoringRoute)
+                                navController.navigate(HistoryRoute)
                             }
                         )
 
@@ -232,7 +232,7 @@ class MainActivity : ComponentActivity() {
                     val args = it.toRoute<RoomsRouteUser>()
                     val buildingId = args.id
                     RoomsScreen(
-                        modifier = Modifier,
+                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
                         buildingId,
                         onNavigateBack = {
                             navController.navigateUp()
@@ -287,6 +287,7 @@ class MainActivity : ComponentActivity() {
                     val foto = args.foto
                     val context = LocalContext.current
                     DetailHomeUserScreen(
+                        id,
                         roomName,
                         harga,
                         rating,

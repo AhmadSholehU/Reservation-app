@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -64,6 +65,7 @@ import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShi
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
 import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.primary
+import com.overdevx.reservationapp.ui.theme.red2
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.white2
@@ -375,7 +377,12 @@ fun BuildingItem(
         .fillMaxWidth()
         .padding(10.dp)
         .clip(RoundedCornerShape(16.dp))
-        .background(primary)
+        .background(brush = Brush.verticalGradient(
+            colors = listOf(
+                primary,
+                red2
+            )
+        ))
         .clickable { onClick(building.building_id) }) {
         Image(
             painter = painterResource(id = R.drawable.ic_wave),

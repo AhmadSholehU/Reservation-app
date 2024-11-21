@@ -53,6 +53,7 @@ import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
@@ -104,7 +105,7 @@ fun MonitoringScreen(
             Spacer(modifier = Modifier.height(10.dp))
             when (roomState) {
                 is Resource.Loading -> {
-                    Loading()
+                    LoadingShimmerEffect()
                 }
 
                 is Resource.ErrorMessage -> {

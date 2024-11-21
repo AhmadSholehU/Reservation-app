@@ -1,5 +1,7 @@
 package com.overdevx.reservationapp.data.presentation.home
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -46,9 +48,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -78,6 +83,7 @@ import kotlin.math.absoluteValue
 
 @Composable
 fun DetailHomeUserScreen(
+    id:Int,
     roomName: String,
     harga: Int,
     rating: String,
@@ -92,6 +98,7 @@ fun DetailHomeUserScreen(
     var showDialog by remember { mutableStateOf(false) }
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     var buildingId by remember { mutableStateOf(1) }
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.fetchRooms(buildingId)
     }
@@ -104,6 +111,7 @@ fun DetailHomeUserScreen(
         LazyColumn(modifier = Modifier) {
             item {
                 MainSection(
+                    id,
                     roomName,
                     harga,
                     rating,
@@ -139,7 +147,26 @@ fun DetailHomeUserScreen(
         ) {
             Button(
                 onClick = {
-                    showDialog = true
+
+                    if(roomName == "Kamar"){
+                        showDialog = true
+                    }else{
+
+                        // Aksi kirim data ke WhatsApp
+                        val message = "Saya ingin memesan $roomName dengan harga $harga."
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse(
+                                String.format(
+                                    "https://api.whatsapp.com/send?phone=%s&text=%s",
+                                    "+62 8987472054", // Ganti dengan nomor WhatsApp
+                                    message
+                                )
+                            )
+                        )
+                        context.startActivity(intent)
+                    }
+
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,7 +194,27 @@ fun DetailHomeUserScreen(
             PesanDialog(
                 selectedRoomNumber = selectedRoomNumber,
                 onDismiss = { showDialog = false },
-                onBooking = { },
+                onDialogAction = { roomNumber ->
+                    var buildingName = ""
+                    if(buildingId==1){
+                        buildingName = "Asrama A"
+                    }else{
+                        buildingName = "Asrama B"
+                    }
+                    // Aksi kirim data ke WhatsApp
+                    val message = "Saya ingin memesan kamar nomor $roomNumber Gedung $buildingName dengan harga $harga."
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(
+                            String.format(
+                                "https://api.whatsapp.com/send?phone=%s&text=%s",
+                                "+62 8987472054", // Ganti dengan nomor WhatsApp
+                                message
+                            )
+                        )
+                    )
+                    context.startActivity(intent)
+                },
                 onBuildingSelected = { buildingName ->
                     if (buildingName == "Gedung Asrama A") {
                         buildingId = 1
@@ -225,6 +272,7 @@ private fun TopBarSection(
 
 @Composable
 private fun MainSection(
+    id:Int,
     roomName: String,
     harga: Int,
     rating: String,
@@ -271,7 +319,7 @@ private fun MainSection(
                         )
                     }
             ) {
-                val newDomain = "192.168.39.85"
+                val newDomain = "192.168.1.108"
                 val newfoto = replaceDomain(fotoList[page], newDomain)
                 AsyncImage(
                     model = newfoto,
@@ -358,7 +406,7 @@ private fun MainSection(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        FasilitasSection()
+        FasilitasSection(id)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "$deskripsi",
@@ -377,13 +425,20 @@ private fun MainSection(
 }
 
 @Composable
-private fun FasilitasSection(modifier: Modifier = Modifier) {
-    val fasilitasList = listOf(
-        Pair("AC", R.drawable.ic_ac),
-        Pair("Wifi", R.drawable.ic_wifi),
-        Pair("Parkir", R.drawable.ic_parkir),
-        Pair("Fasilitas Rapat", R.drawable.ic_rapat)
+private fun FasilitasSection(id:Int,modifier: Modifier = Modifier) {
+    // Pemetaan ID ke daftar fasilitas
+    val fasilitasMap = mapOf(
+        1 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Keamanan 24 Jam" to R.drawable.ic_call),
+        2 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Keamanan 24 Jam" to R.drawable.ic_call),
+        3 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
+        4 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
+        5 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
+        6 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
+        7 to listOf("CCTV 24 Jam" to R.drawable.ic_cctv)
     )
+
+    // Ambil daftar fasilitas berdasarkan ID
+    val fasilitasList = fasilitasMap[id] ?: emptyList()
 
     Column(modifier = Modifier) {
         Text(
@@ -428,7 +483,7 @@ private fun FasilitasSection(modifier: Modifier = Modifier) {
 private fun PesanDialog(
     selectedRoomNumber: String?,
     onDismiss: () -> Unit,
-    onBooking: () -> Unit,
+    onDialogAction: (String) -> Unit,
     viewModel: RoomsViewModel = hiltViewModel(),
     onBuildingSelected: (String) -> Unit,
     onRoomSelected: (String?, Int?, String?) -> Unit,
@@ -533,9 +588,10 @@ private fun PesanDialog(
         },
 
         confirmButton = {
-
             if (selectedRoomNumber != null) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    ) {
                     Text(
                         text = "Kamar $selectedRoom terpilih",
                         fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
@@ -547,7 +603,10 @@ private fun PesanDialog(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = onDismiss,
+                        onClick = {
+                            onDialogAction(selectedRoomNumber)
+                            onDismiss()
+                        },
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = primary),
                         modifier = Modifier

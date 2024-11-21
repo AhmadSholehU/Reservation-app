@@ -43,6 +43,7 @@ import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.History
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.gray3
 import com.overdevx.reservationapp.ui.theme.primary
@@ -57,8 +58,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    historyViewModel: HistoryViewModel= hiltViewModel(),
-    modifier: Modifier = Modifier) {
+    historyViewModel: HistoryViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
+) {
 
     val historyState by historyViewModel.historyState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
@@ -72,19 +74,21 @@ fun HistoryScreen(
             isRefreshing = false
         }
     }
-    Column(modifier = modifier
-        .padding(16.dp)
-        .fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxSize()
+    ) {
 
-            Text(
-                text = "Riwayat",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 22.sp,
-                color = secondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+        Text(
+            text = "Riwayat",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 22.sp,
+            color = secondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
 
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -96,14 +100,18 @@ fun HistoryScreen(
             ) {
             when (historyState) {
                 is Resource.Loading -> {
-                   Loading()
+                  LoadingShimmerEffect()
                 }
 
                 is Resource.Success -> {
                     val bookingHistoryList = (historyState as Resource.Success<List<History>>).data
                     Log.d("HomeScreen", "Booking History List: $bookingHistoryList")
                     val groupedData =
-                        bookingHistoryList?.groupBy { formatDate(it.start_date) }
+                        bookingHistoryList
+                            ?.groupBy { formatDate(it.start_date) }
+                            ?.mapValues { entry ->
+                                entry.value.sortedBy { it.id }
+                            }
                     Log.d("HomeScreen", "Grouped Data: $groupedData")
                     LazyColumn(
                         modifier = Modifier
@@ -118,9 +126,9 @@ fun HistoryScreen(
                                 // Date Header
                                 Text(
                                     text = date,
-                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                                     fontSize = 16.sp,
-                                    color = secondary,
+                                    color = secondary.copy(0.5f),
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
@@ -162,20 +170,32 @@ fun BookingItem(history: History) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = secondary)
+        colors = CardDefaults.cardColors(containerColor = white)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp)) {
+            Column(
+                modifier = Modifier
+            ) {
+                Text(
+                    text = "${history.Room.Building.name} - ${history.Room.room_number}",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    color = secondary,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "${history.days} Hari",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                    color = gray,
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = history.Room.Building.name,
-                color = white,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-            Text(
-                text = "Ruang ${history.Room.room_number}",
-                color = white2,
+                text = "ID BOOKING : ${history.nomor_pesanan}",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                color = gray,
                 fontSize = 12.sp
             )
         }

@@ -331,7 +331,7 @@ private fun BookingItem(
         Spacer(modifier = Modifier.width(10.dp))
         Column(modifier = Modifier.padding(5.dp)) {
             Text(
-                text = "ID BOOKING : ${booking.booking_id}",
+                text = "ID BOOKING : ${booking.nomor_pesanan}",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                 fontSize = 14.sp,
                 color = gray2,

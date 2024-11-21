@@ -50,6 +50,7 @@ import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
@@ -81,19 +82,18 @@ fun MonitoringScreen2(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = Modifier.padding(bottom = 10.dp)) {
         TopBarSection()
         Spacer(modifier = Modifier.height(16.dp))
         PullToRefreshBox(
             state = state,
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
-
             ) {
 
             when (roomState) {
                 is Resource.Loading -> {
-                    Loading()
+                    LoadingShimmerEffect()
                 }
 
                 is Resource.ErrorMessage -> {
@@ -113,7 +113,7 @@ fun MonitoringScreen2(
                 is Resource.Success -> {
                     val monitoringList = (roomState as Resource.Success<List<Monitoring>>).data
 
-                    LazyColumn {
+                    LazyColumn (){
                         item {
                             roomCount
                                 .filter { it.building_name != "Gedung C" }
@@ -208,7 +208,7 @@ private fun ItemSection(
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, top = 10.dp)
             .clip(RoundedCornerShape(16.dp))
-            .clickable {  }
+            .clickable { }
 
     ) {
         Image(

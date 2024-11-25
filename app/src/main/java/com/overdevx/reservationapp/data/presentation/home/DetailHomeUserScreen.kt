@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -71,6 +72,7 @@ import com.overdevx.reservationapp.data.presentation.RoomsViewModel
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.EmptyItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffectPesanDialog
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
@@ -83,7 +85,7 @@ import kotlin.math.absoluteValue
 
 @Composable
 fun DetailHomeUserScreen(
-    id:Int,
+    id: Int,
     roomName: String,
     harga: Int,
     rating: String,
@@ -148,12 +150,12 @@ fun DetailHomeUserScreen(
             Button(
                 onClick = {
 
-                    if(roomName == "Kamar"){
+                    if (roomName == "Kamar") {
                         showDialog = true
-                    }else{
-
+                    } else {
+                        val formatedHarga = formatCurrency(harga)
                         // Aksi kirim data ke WhatsApp
-                        val message = "Saya ingin memesan $roomName dengan harga $harga."
+                        val message = "Saya ingin memesan $roomName dengan tarif Rp. $formatedHarga per hari. Mohon konfirmasikan apakah gedung tersebut masih tersedia untuk tanggal yang saya inginkan."
                         val intent = Intent(
                             Intent.ACTION_VIEW,
                             Uri.parse(
@@ -191,18 +193,23 @@ fun DetailHomeUserScreen(
         }
 
         if (showDialog) {
+            //viewModel.fetchRooms(1)
             PesanDialog(
                 selectedRoomNumber = selectedRoomNumber,
-                onDismiss = { showDialog = false },
+                onDismiss = {
+                    showDialog = false },
                 onDialogAction = { roomNumber ->
                     var buildingName = ""
-                    if(buildingId==1){
+                    if (buildingId == 1) {
                         buildingName = "Asrama A"
-                    }else{
+                    } else {
                         buildingName = "Asrama B"
                     }
+
+                    val formatedHarga = formatCurrency(harga)
                     // Aksi kirim data ke WhatsApp
-                    val message = "Saya ingin memesan kamar nomor $roomNumber Gedung $buildingName dengan harga $harga."
+                    val message =
+                        "Saya ingin memesan kamar nomor $roomNumber di Gedung $buildingName dengan tarif Rp. $formatedHarga per malam. Apakah kamar tersebut masih tersedia untuk tanggal yang saya inginkan?"
                     val intent = Intent(
                         Intent.ACTION_VIEW,
                         Uri.parse(
@@ -272,7 +279,7 @@ private fun TopBarSection(
 
 @Composable
 private fun MainSection(
-    id:Int,
+    id: Int,
     roomName: String,
     harga: Int,
     rating: String,
@@ -425,15 +432,45 @@ private fun MainSection(
 }
 
 @Composable
-private fun FasilitasSection(id:Int,modifier: Modifier = Modifier) {
+private fun FasilitasSection(id: Int, modifier: Modifier = Modifier) {
     // Pemetaan ID ke daftar fasilitas
     val fasilitasMap = mapOf(
-        1 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Keamanan 24 Jam" to R.drawable.ic_call),
-        2 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Keamanan 24 Jam" to R.drawable.ic_call),
-        3 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
-        4 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
-        5 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
-        6 to listOf("AC" to R.drawable.ic_ac, "Wifi" to R.drawable.ic_wifi, "Parkir" to R.drawable.ic_parkir, "Fasilitas Rapat" to R.drawable.ic_rapat),
+        1 to listOf(
+            "AC" to R.drawable.ic_ac,
+            "Wifi" to R.drawable.ic_wifi,
+            "Parkir" to R.drawable.ic_parkir,
+            "Keamanan 24 Jam" to R.drawable.ic_call
+        ),
+        2 to listOf(
+            "AC" to R.drawable.ic_ac,
+            "Wifi" to R.drawable.ic_wifi,
+            "Parkir" to R.drawable.ic_parkir,
+            "Keamanan 24 Jam" to R.drawable.ic_call
+        ),
+        3 to listOf(
+            "AC" to R.drawable.ic_ac,
+            "Wifi" to R.drawable.ic_wifi,
+            "Parkir" to R.drawable.ic_parkir,
+            "Fasilitas Rapat" to R.drawable.ic_rapat
+        ),
+        4 to listOf(
+            "AC" to R.drawable.ic_ac,
+            "Wifi" to R.drawable.ic_wifi,
+            "Parkir" to R.drawable.ic_parkir,
+            "Fasilitas Rapat" to R.drawable.ic_rapat
+        ),
+        5 to listOf(
+            "AC" to R.drawable.ic_ac,
+            "Wifi" to R.drawable.ic_wifi,
+            "Parkir" to R.drawable.ic_parkir,
+            "Fasilitas Rapat" to R.drawable.ic_rapat
+        ),
+        6 to listOf(
+            "AC" to R.drawable.ic_ac,
+            "Wifi" to R.drawable.ic_wifi,
+            "Parkir" to R.drawable.ic_parkir,
+            "Fasilitas Rapat" to R.drawable.ic_rapat
+        ),
         7 to listOf("CCTV 24 Jam" to R.drawable.ic_cctv)
     )
 
@@ -495,7 +532,8 @@ private fun PesanDialog(
     var selectedRoom by remember { mutableStateOf("") }
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            onDismiss()},
         title = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
@@ -529,7 +567,7 @@ private fun PesanDialog(
                 Spacer(modifier = Modifier.height(10.dp))
                 when (roomState) {
                     is Resource.Loading -> {
-                        LoadingShimmerEffect()
+                        LoadingShimmerEffectPesanDialog()
                         //RoomSkeletonGrid()
                     }
 
@@ -540,30 +578,75 @@ private fun PesanDialog(
                             if (rooms.isEmpty()) {
                                 EmptyItem()
                             } else {
-
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(4),
-                                    modifier = Modifier
-                                        .height(200.dp)
-
-                                ) {
-                                    items(rooms, key = { it.room_id }) { room ->
-                                        RoomItem(
-                                            modifier = Modifier.padding(5.dp),
-                                            room = room,
-                                            isSelected = selectedRoomNumber == room.room_number,
-                                            onClick = {
-                                                selectedRoom = room.room_number
-                                                onRoomSelected(
-                                                    if (selectedRoomNumber == room.room_number) null else room.room_number,
-                                                    room.room_id,
-                                                    room.status_name
-                                                )
-                                            }
-                                        )
+                                val groupedRooms = rooms.groupBy { room ->
+                                    if (room.building_name == "Gedung A") {
+                                        when {
+                                            room.room_number.startsWith("A1") -> "Lantai 1"
+                                            room.room_number.startsWith("A2") -> "Lantai 2"
+                                            room.room_number.startsWith("A3") -> "Lantai 3"
+                                            else -> "Lantai Lainnya"
+                                        }
+                                    } else {
+                                        when {
+                                            room.room_number.startsWith("B1") -> "Lantai 1"
+                                            room.room_number.startsWith("B2") -> "Lantai 2"
+                                            room.room_number.startsWith("B3") -> "Lantai 3"
+                                            else -> "Lantai Lainnya"
+                                        }
                                     }
-
                                 }
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .padding(16.dp)
+                                ) {
+                                    groupedRooms.forEach { (floor, rooms) ->
+                                        item {
+                                            // Header untuk setiap lantai
+                                            Text(
+                                                text = floor,
+                                                fontSize = 16.sp,
+                                                color = secondary,
+                                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                                modifier = Modifier.padding(vertical = 8.dp)
+                                            )
+                                        }
+
+                                        // Menampilkan ruangan dalam grid untuk lantai ini
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .heightIn(max = 500.dp) // Atur ketinggian maksimal grid
+                                            ) {
+                                                LazyVerticalGrid(
+                                                    columns = GridCells.Fixed(4),
+                                                    modifier = Modifier.fillMaxWidth()
+
+                                                ) {
+                                                    items(rooms, key = { it.room_id }) { room ->
+                                                        RoomItem(
+                                                            modifier = Modifier.padding(5.dp),
+                                                            room = room,
+                                                            isSelected = selectedRoomNumber == room.room_number,
+                                                            onClick = {
+                                                                selectedRoom = room.room_number
+                                                                onRoomSelected(
+                                                                    if (selectedRoomNumber == room.room_number) null else room.room_number,
+                                                                    room.room_id,
+                                                                    room.status_name
+                                                                )
+                                                            }
+                                                        )
+                                                    }
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
                         }
                     }
@@ -589,9 +672,10 @@ private fun PesanDialog(
 
         confirmButton = {
             if (selectedRoomNumber != null) {
-                Column(modifier = Modifier
-                    .fillMaxWidth()
-                    ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
                     Text(
                         text = "Kamar $selectedRoom terpilih",
                         fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
@@ -629,30 +713,6 @@ private fun PesanDialog(
         },
         dismissButton = {
 
-//                Column(modifier = Modifier.fillMaxWidth()) {
-//                    if(selectedRoomNumber!=null) {
-//                    Button(
-//                        onClick = onDismiss,
-//                        shape = RoundedCornerShape(10.dp),
-//                        border = BorderStroke(1.dp, secondary),
-//                        colors = ButtonDefaults.buttonColors(containerColor = white),
-//                        modifier = Modifier
-//                            .align(Alignment.CenterHorizontally)
-//                            .fillMaxWidth()
-//                    ) {
-//                        Text(
-//                            text = "BATAL",
-//                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                            fontSize = 16.sp,
-//                            color = secondary,
-//                            textAlign = TextAlign.Center,
-//                            modifier = Modifier
-//                        )
-//                    }
-//
-//                }
-//
-//            }
         },
         containerColor = white,
         shape = RoundedCornerShape(10.dp),
@@ -669,15 +729,27 @@ private fun RoomItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val color = if (room.status_name == "booked") primary else Color.Transparent
     val borderColor = when (room.status_name) {
         "available" -> secondary
-        "booked" -> primary
-        else -> secondary.copy(0.5f)
+        "booked" -> Color.Transparent
+        else -> secondary.copy(0.5f) // Untuk "not available"
     }
+
     // Warna latar belakang tergantung apakah item sedang dipilih atau tidak
-    val backgroundColor = if (isSelected) primary else color
-    val textColor = if (room.status_name == "booked") white else borderColor
+    val backgroundColor = when {
+        isSelected -> primary // Warna merah jika dipilih
+        room.status_name == "booked" -> secondary
+        else -> Color.Transparent
+    }
+
+    val textColor = when {
+        isSelected -> Color.White // Teks putih jika dipilih
+        room.status_name == "booked" -> Color.White
+        else -> borderColor
+    }
+
+    // Hanya dapat diklik jika statusnya "available"
+    val isClickable = room.status_name == "available"
 
     Row(
         modifier = modifier
@@ -685,10 +757,10 @@ private fun RoomItem(
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))
             .background(backgroundColor)
-            .clickable {
-                onClick()
-            }
-
+            .then(
+                if (isClickable) Modifier.clickable { onClick() }
+                else Modifier // Tidak ada aksi jika tidak clickable
+            )
     ) {
         Column(
             modifier = Modifier
@@ -697,7 +769,7 @@ private fun RoomItem(
                 .padding(5.dp),
         ) {
             Text(
-                text = "${room.room_number} ",
+                text = "${room.room_number}",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                 fontSize = 16.sp,
                 color = textColor,

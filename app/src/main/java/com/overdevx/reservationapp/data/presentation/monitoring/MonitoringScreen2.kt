@@ -82,14 +82,14 @@ fun MonitoringScreen2(
         }
     }
 
-    Column(modifier = Modifier.padding(bottom = 10.dp)) {
+    Column(modifier = modifier.padding(bottom = 10.dp)) {
         TopBarSection()
         Spacer(modifier = Modifier.height(16.dp))
         PullToRefreshBox(
             state = state,
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
-            ) {
+        ) {
 
             when (roomState) {
                 is Resource.Loading -> {
@@ -113,7 +113,7 @@ fun MonitoringScreen2(
                 is Resource.Success -> {
                     val monitoringList = (roomState as Resource.Success<List<Monitoring>>).data
 
-                    LazyColumn (){
+                    LazyColumn() {
                         item {
                             roomCount
                                 .filter { it.building_name != "Gedung C" }
@@ -125,8 +125,19 @@ fun MonitoringScreen2(
                                             ?: 0, // Nilai default 0
                                         booked = building.room_status.booked.count
                                             ?: 0,             // Nilai default 0
-                                        buildingName = building.building_name
-                                            ?: "Unknown Building",  // Nilai default "Unknown Building"
+                                        buildingName =
+                                        when(building.building_name){
+                                            "Gedung A" -> "Kamar Gedung Asrama A"
+                                            "Gedung B" -> "Kamar Gedung Asrama B"
+                                            else ->  building.building_name
+                                        }
+                                       ,
+                                        buildingImage =
+                                        when (building.building_id) {
+                                            1 -> R.drawable.img_gedunga
+                                            2 -> R.drawable.img_gedungb
+                                            else -> R.drawable.img_gedunga
+                                        },
                                         onClick = {
                                             onClick(
                                                 building.building_id ?: 0
@@ -138,13 +149,24 @@ fun MonitoringScreen2(
                             val gedungC =
                                 roomCount.find { it.building_name == "Gedung C" }
                             gedungC?.let { building ->
-                                val filteredRooms = building.rooms.filterNot {
-                                    it.room_type == "ruang"
-                                }
-                                filteredRooms.forEach { room ->
+//                                val filteredRooms = building.rooms.filterNot {
+//                                    it.room_type == "ruang"
+//                                }
+                                building.rooms.forEach { room ->
                                     ItemSection2(
                                         roomName = room.room_name,
                                         statusRoom = room.room_status,
+                                        roomImage =
+                                        when (room.room_name) {
+                                            "Lapangan" -> R.drawable.img_lap
+                                            "R.Transit" -> R.drawable.img_transit
+                                            "RRKecilA" -> R.drawable.img_meetkecil
+                                            "RRKecilB" -> R.drawable.img_meetkecil
+                                            "RRBesarC" -> R.drawable.img_meetbesar
+                                            "RRBesarAB" -> R.drawable.img_meetbesar
+                                            "GPABC" -> R.drawable.img_pertemuan
+                                            else -> R.drawable.img_sample
+                                        },
                                         onClick = {
 
                                         }
@@ -200,9 +222,9 @@ private fun ItemSection(
     notAvailble: Int,
     booked: Int,
     buildingName: String,
+    buildingImage: Int,
     onClick: () -> Unit
 ) {
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -212,7 +234,7 @@ private fun ItemSection(
 
     ) {
         Image(
-            painter = painterResource(id = R.drawable.img_sample), // Replace with actual image
+            painter = painterResource(id = buildingImage),
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
@@ -341,9 +363,10 @@ private fun ItemSection2(
     modifier: Modifier = Modifier,
     statusRoom: String,
     roomName: String,
+    roomImage:Int,
     onClick: () -> Unit
 ) {
-
+    val boxcolor = if(statusRoom=="available") green else if(statusRoom=="not_available") gray else primary
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -353,7 +376,7 @@ private fun ItemSection2(
 
     ) {
         Image(
-            painter = painterResource(id = R.drawable.img_sample), // Replace with actual image
+            painter = painterResource(id = roomImage), // Replace with actual image
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
@@ -403,7 +426,7 @@ private fun ItemSection2(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(primary)
+                        .background(boxcolor)
                         .align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(5.dp))

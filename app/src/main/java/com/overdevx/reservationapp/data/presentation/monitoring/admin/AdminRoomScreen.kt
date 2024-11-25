@@ -373,45 +373,36 @@ fun AdminRoomScreen(
                 val ketersediaanDate =
                     (ketersediaanState as Resource.Success<KetersediaanResponse>).data?.data
                 unselectableDates.clear()
+
                 if (ketersediaanDate != null) {
                     ketersediaanDate.forEach { ketersediaan ->
-                        // Ubah format SimpleDateFormat sesuai format API
-                        val dateFormat =
+                        val originalDateFormat =
                             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                        dateFormat.timeZone =
-                            TimeZone.getTimeZone("UTC+8") // Pastikan waktu dalam zona UTC
+                        originalDateFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-                        val startDate = dateFormat.parse(ketersediaan.start_date)
-                        val endDate = dateFormat.parse(ketersediaan.end_date)
+                        // Modifikasi string tanggal
+                        val modifiedStartDate = ketersediaan.start_date.replace("T01", "T00")
 
-                        if (startDate != null && endDate != null) {
-                            val calendar = Calendar.getInstance()
-                            // Normalisasi startDate
-                            calendar.time = startDate
-                            calendar.set(Calendar.HOUR_OF_DAY, 0)
-                            calendar.set(Calendar.MINUTE, 0)
-                            calendar.set(Calendar.SECOND, 0)
-                            calendar.set(Calendar.MILLISECOND, 0)
-                            var currentDate = calendar.timeInMillis
+                        // Parse tanggal ke Long
+                        val startDateInMillis = originalDateFormat.parse(modifiedStartDate)?.time
+                        val endDateInMillis = originalDateFormat.parse(ketersediaan.end_date)?.time
 
-                            // Normalisasi endDate
-                            calendar.time = endDate
-                            calendar.set(Calendar.HOUR_OF_DAY, 0)
-                            calendar.set(Calendar.MINUTE, 0)
-                            calendar.set(Calendar.SECOND, 0)
-                            calendar.set(Calendar.MILLISECOND, 0)
-                            val normalizedEndDate = calendar.timeInMillis
-                            // Tambahkan semua tanggal dari startDate hingga endDate
-                            while (currentDate <= normalizedEndDate) {
-                                unselectableDates.add(currentDate)
-                                currentDate += 24 * 60 * 60 * 1000 // Tambah satu hari dalam milidetik
+                        Log.d("DATE", "Start Date: $modifiedStartDate, End Date: ${ketersediaan.end_date}")
+                        // Tambahkan tanggal ke daftar unselectableDates
+                        if (startDateInMillis != null && endDateInMillis != null) {
+                            val current = Calendar.getInstance()
+                            current.timeInMillis = startDateInMillis
+
+                            while (current.timeInMillis <= endDateInMillis) {
+                                unselectableDates.add(current.timeInMillis)
+                                current.add(Calendar.DATE, 1) // Increment 1 hari
                             }
-                            Log.d("DATE", unselectableDates.toString())
                         }
-
                     }
+
                 }
-                Log.d("DATE", unselectableDates.toString())
+
+                //Log.d("DATE", unselectableDates.toString())
             }
 
             is Resource.Error -> {
@@ -753,6 +744,77 @@ fun LoadingShimmerEffect() {
     }
     LazyColumn {
         items(8) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .background(white)
+                    .clip(RoundedCornerShape(10.dp))
+
+            ) {
+                Row(Modifier.padding(10.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(height = 80.dp, width = 80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LoadingShimmerEffectPesanDialog() {
+    fun Modifier.shimmerEffect(): Modifier = composed {
+        val colors = listOf(
+            Color.LightGray.copy(alpha = 0.3f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.3f),
+        )
+        val transition = rememberInfiniteTransition(label = "shimmer")
+        val shimmerAnimation = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
+            label = "shimmer"
+        )
+        background(
+            Brush.linearGradient(
+                colors = colors,
+                start = Offset.Zero,
+                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
+            )
+        )
+    }
+    LazyColumn {
+        items(2) {
             Row(
                 Modifier
                     .fillMaxSize()
@@ -1406,9 +1468,10 @@ fun DatePickerWithDateSelectableDatesSample(
                 selectedYearContainerColor = primary,
                 selectedDayContainerColor = primary,
                 yearContentColor = secondary,
-                disabledDayContentColor= primary,
-                dayInSelectionRangeContainerColor= primary.copy(0.3f),
-            ))
+                disabledDayContentColor = primary,
+                dayInSelectionRangeContainerColor = primary.copy(0.3f),
+            )
+        )
     }
 
     if (showAlertDialog) {
@@ -1425,7 +1488,7 @@ fun DatePickerWithDateSelectableDatesSample(
                             .align(Alignment.CenterHorizontally)
                     )
                 }
-                    },
+            },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -1442,9 +1505,7 @@ fun DatePickerWithDateSelectableDatesSample(
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                       onDismiss()
-                    },
+                    onClick = { showAlertDialog = false },
                     modifier = Modifier
                         .height(50.dp)
                         .fillMaxWidth(),

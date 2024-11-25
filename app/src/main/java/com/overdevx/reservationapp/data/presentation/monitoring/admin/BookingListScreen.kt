@@ -74,6 +74,7 @@ import com.overdevx.reservationapp.utils.formatDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
@@ -203,25 +204,30 @@ fun BookingListScreen(
                     unselectableDates.clear()
                     if (ketersediaanDate != null) {
                         ketersediaanDate.forEach { ketersediaan ->
-                            // Ubah format SimpleDateFormat sesuai format API
-                            val dateFormat =
+                            val originalDateFormat =
                                 SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                            dateFormat.timeZone =
-                                TimeZone.getTimeZone("UTC") // Pastikan waktu dalam zona UTC
+                            originalDateFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-                            val startDate = dateFormat.parse(ketersediaan.start_date)?.time
-                            val endDate = dateFormat.parse(ketersediaan.end_date)?.time
+                            // Modifikasi string tanggal
+                            val modifiedStartDate = ketersediaan.start_date.replace("T01", "T00")
 
-                            if (startDate != null && endDate != null) {
-                                // Tambahkan semua tanggal dari startDate hingga endDate
-                                var currentDate = startDate
-                                while (currentDate <= endDate) {
-                                    unselectableDates.add(currentDate)
-                                    currentDate += 24 * 60 * 60 * 1000 // Tambah satu hari dalam milidetik
+                            // Parse tanggal ke Long
+                            val startDateInMillis = originalDateFormat.parse(modifiedStartDate)?.time
+                            val endDateInMillis = originalDateFormat.parse(ketersediaan.end_date)?.time
+
+                            Log.d("DATE", "Start Date: $modifiedStartDate, End Date: ${ketersediaan.end_date}")
+                            // Tambahkan tanggal ke daftar unselectableDates
+                            if (startDateInMillis != null && endDateInMillis != null) {
+                                val current = Calendar.getInstance()
+                                current.timeInMillis = startDateInMillis
+
+                                while (current.timeInMillis <= endDateInMillis) {
+                                    unselectableDates.add(current.timeInMillis)
+                                    current.add(Calendar.DATE, 1) // Increment 1 hari
                                 }
                             }
-
                         }
+
                     }
                     Log.d("DATE", unselectableDates.toString())
                 }

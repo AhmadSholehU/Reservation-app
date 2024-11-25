@@ -108,7 +108,7 @@ fun HistoryScreen(
                     Log.d("HomeScreen", "Booking History List: $bookingHistoryList")
                     val groupedData =
                         bookingHistoryList
-                            ?.groupBy { formatDate(it.start_date) }
+                            ?.groupBy { formatDate(it.changed_at) }
                             ?.mapValues { entry ->
                                 entry.value.sortedBy { it.id }
                             }

@@ -284,13 +284,24 @@ private fun Item(
 
             Spacer(modifier = Modifier.height(10.dp))
             val formatHarga = formatCurrency(harga)
-            Text(
-                text = "Rp$formatHarga /Kamar /Hari",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 16.sp,
-                color = primary,
-                modifier = Modifier
-            )
+            if(roomName=="Kamar"){
+                Text(
+                    text = "Rp$formatHarga /Kamar /Hari",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                    color = primary,
+                    modifier = Modifier
+                )
+            }else{
+                Text(
+                    text = "Rp$formatHarga /Hari",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                    color = primary,
+                    modifier = Modifier
+                )
+            }
+
 
         }
 

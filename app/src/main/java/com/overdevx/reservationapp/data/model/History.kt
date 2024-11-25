@@ -13,7 +13,7 @@ data class History(
     val nomor_pesanan:String,
     var start_date:String,
     val end_date:String,
-    val change_at: String,
+    val changed_at: String,
     val Room: BookingDetail
 )
 

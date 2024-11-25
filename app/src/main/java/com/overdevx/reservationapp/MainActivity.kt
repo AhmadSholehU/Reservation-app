@@ -154,8 +154,6 @@ class MainActivity : ComponentActivity() {
                 composable<ControlRoute> {
                     HomeScreen(
                         modifier = Modifier.padding(
-                            start = 10.dp,
-                            end = 10.dp,
                             bottom = innerPadding.calculateBottomPadding()
                         ),
                         onClick = { buildingId, buildingName ->
@@ -217,7 +215,7 @@ class MainActivity : ComponentActivity() {
                 composable<MonitoringRoute> {
                     MonitoringScreen2(
                         modifier = Modifier.padding(
-                            bottom = innerPadding.calculateBottomPadding() + 20.dp,
+                            bottom = innerPadding.calculateBottomPadding(),
                             top = 16.dp
                         ),
                         onClick = { buildingId ->
@@ -337,7 +335,6 @@ class MainActivity : ComponentActivity() {
                 BottomScreens.Home,
                 BottomScreens.Control,
                 BottomScreens.Monitoring,
-                BottomScreens.History,
             )
         }
 

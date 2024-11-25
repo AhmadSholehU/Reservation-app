@@ -25,4 +25,8 @@ class RoomsViewModel @Inject constructor(
         }
     }
 
+    fun resetRoomState(){
+        _roomState.value = Resource.Idle
+    }
+
 }

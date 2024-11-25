@@ -64,21 +64,25 @@ fun HomeControlScreen(
     onMenu2Click: () -> Unit,
     onMenu3Click: () -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBarSection()
-        Spacer(modifier = Modifier.height(20.dp))
-        HeaderSection(modifier = Modifier.padding(start = 10.dp, end = 10.dp), onLogoutClick = { onLogoutClick() })
-        Spacer(modifier = Modifier.height(10.dp))
-        ContentSection(onMenu1Click, onMenu2Click, onMenu3Click)
+    Box(modifier = modifier.fillMaxSize()){
+        Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+            TopBarSection()
+            Spacer(modifier = Modifier.height(20.dp))
+            HeaderSection(modifier = Modifier.padding(start = 10.dp, end = 10.dp), onLogoutClick = { onLogoutClick() })
+            Spacer(modifier = Modifier.height(10.dp))
+            ContentSection(onMenu1Click, onMenu2Click, onMenu3Click)
+
+        }
         Image(
             painter = painterResource(id = R.drawable.img_line),
             contentDescription = null,
             contentScale = ContentScale.FillWidth,
             modifier = Modifier
                 .fillMaxWidth()
-
+                .align(Alignment.BottomCenter)
         )
     }
+
 }
 
 @Composable

@@ -129,7 +129,14 @@ dependencies {
     //shimmer
     implementation (libs.google.accompanist.placeholder.material)
 
-    //foundation
+    //paging3
+//    implementation (libs.androidx.paging.runtime)
+//    implementation (libs.androidx.paging.compose)
+
+    // Paging
+    implementation ("androidx.paging:paging-runtime-ktx:3.1.1")
+    implementation ("androidx.paging:paging-compose:1.0.0-alpha18")
+    implementation ("androidx.core:core-splashscreen:1.0.1")
 
 
 

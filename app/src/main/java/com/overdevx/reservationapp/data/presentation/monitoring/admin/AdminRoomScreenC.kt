@@ -83,6 +83,8 @@ fun AdminRoomScreenC(
     // State untuk menyimpan ruangan yang dipilih
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var showLoadingDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     var days_change by remember { mutableStateOf(0) }
     var room_id by remember { mutableStateOf(0) }
@@ -171,23 +173,20 @@ fun AdminRoomScreenC(
 
         when (bookingState) {
             is Resource.Loading -> {
-                Column(Modifier.fillMaxWidth()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = primary)
-                }
-
+                showLoadingDialog = true
             }
             is Resource.Success -> {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = "Update Status successful",
-                            duration = SnackbarDuration.Short)
-                        viewModelBooking.resetBookingState()
-                        viewModel.fetchRooms(buildingId)
-                    }
-
-
+                showLoadingDialog = false
+                showSuccessDialog = true
+                if (showSuccessDialog) {
+                    SuccessDialog(
+                        onDismiss = { showSuccessDialog = false },
+                        onClick = {
+                            viewModelBooking.resetBookingState()
+                            viewModel.fetchRooms(buildingId)
+                            selectedRoomNumber = null
+                        })
+                }
             }
             is Resource.ErrorMessage -> {
                 Text("Error: ${(bookingState as Resource.ErrorMessage).message}")
@@ -197,22 +196,21 @@ fun AdminRoomScreenC(
 
         when (updateRoomState) {
             is Resource.Loading -> {
-                Column(Modifier.fillMaxWidth()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = primary
-                    )
-                }
+                showLoadingDialog = true
             }
 
             is Resource.Success -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = "Update Status successful",
-                        duration = SnackbarDuration.Short)
-                    viewModelBooking.resetBookingState()
-                    viewModelBooking.resetUpdateState()
-                    viewModel.fetchRooms(buildingId)
+                showLoadingDialog = false
+                showSuccessDialog = true
+                if (showSuccessDialog) {
+                    SuccessDialog(
+                        onDismiss = { showDialog = false },
+                        onClick = {
+                            viewModelBooking.resetBookingState()
+                            viewModelBooking.resetUpdateState()
+                            viewModel.fetchRooms(buildingId)
+                            selectedRoomNumber = null
+                        })
                 }
             }
 
@@ -225,7 +223,7 @@ fun AdminRoomScreenC(
 
         when (bookingRoomState) {
             is Resource.Loading -> {
-               LoadingShimmerEffect()
+               //LoadingShimmerEffect()
             }
             is Resource.Success -> {
                 // Handle successful booking room data
@@ -275,6 +273,11 @@ fun AdminRoomScreenC(
             else -> {}
         }
 
+        if (showLoadingDialog) {
+            LoadingDialog(onDismissRequest = {
+
+            })
+        }
         Row{
             // Menampilkan Snackbar dengan SnackbarHost
             SnackbarHost(
@@ -383,7 +386,7 @@ private fun RoomSection(
         ) {
         when (roomState) {
             is Resource.Loading -> {
-                Loading()
+                LoadingShimmerEffect()
             }
 
             is Resource.Success -> {

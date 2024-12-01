@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -45,6 +46,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
@@ -93,6 +95,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -138,6 +141,7 @@ fun AdminRoomScreen(
     // State untuk menyimpan ruangan yang dipilih
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    var showLoadingDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     var days_change by remember { mutableStateOf(0) }
@@ -197,38 +201,6 @@ fun AdminRoomScreen(
 
         )
 
-        Row {
-            // Menampilkan Snackbar dengan SnackbarHost
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.Bottom),
-                snackbar = { snackbarData ->
-                    Snackbar(
-                        action = {
-                            Text(
-                                text = "Dismiss",
-                                color = Color.White,
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                                fontSize = 12.sp,
-                                modifier = Modifier.clickable {
-                                    snackbarData.dismiss()  // Menutup Snackbar saat di klik
-                                }
-                            )
-                        },
-                        modifier = Modifier.padding(16.dp),
-                        containerColor = primary
-                    ) {
-                        Text(
-                            text = snackbarData.visuals.message,
-                            color = Color.White,
-                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            )
-        }
-
         // Tampilkan dialog jika showDialog bernilai true
         if (showDialog) {
             StatusDialog(
@@ -280,15 +252,11 @@ fun AdminRoomScreen(
         // Tampilkan status booking
         when (bookingState) {
             is Resource.Loading -> {
-                Column(Modifier.fillMaxWidth()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = primary
-                    )
-                }
+                showLoadingDialog = true
             }
 
             is Resource.Success -> {
+                showLoadingDialog = false
                 showSuccessDialog = true
                 if (showSuccessDialog) {
                     SuccessDialog(
@@ -310,15 +278,11 @@ fun AdminRoomScreen(
 
         when (updateRoomState) {
             is Resource.Loading -> {
-                Column(Modifier.fillMaxWidth()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        color = primary
-                    )
-                }
+               showLoadingDialog=true
             }
 
             is Resource.Success -> {
+                showLoadingDialog=false
                 showSuccessDialog = true
                 SuccessDialog(
                     onDismiss = { showDialog = false },
@@ -387,7 +351,10 @@ fun AdminRoomScreen(
                         val startDateInMillis = originalDateFormat.parse(modifiedStartDate)?.time
                         val endDateInMillis = originalDateFormat.parse(ketersediaan.end_date)?.time
 
-                        Log.d("DATE", "Start Date: $modifiedStartDate, End Date: ${ketersediaan.end_date}")
+                        Log.d(
+                            "DATE",
+                            "Start Date: $modifiedStartDate, End Date: ${ketersediaan.end_date}"
+                        )
                         // Tambahkan tanggal ke daftar unselectableDates
                         if (startDateInMillis != null && endDateInMillis != null) {
                             val current = Calendar.getInstance()
@@ -449,6 +416,12 @@ fun AdminRoomScreen(
             else -> {
 
             }
+        }
+
+        if (showLoadingDialog) {
+            LoadingDialog(onDismissRequest = {
+
+            })
         }
 
 
@@ -1298,6 +1271,31 @@ fun Loading() {
         )
     }
 }
+
+@Composable
+fun LoadingDialog(onDismissRequest: () -> Unit) {
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        Card(
+            modifier = Modifier
+                .size(100.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(color = primary) // Indikator loading
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

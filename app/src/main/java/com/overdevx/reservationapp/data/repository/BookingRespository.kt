@@ -1,6 +1,9 @@
 package com.overdevx.reservationapp.data.repository
 
 import android.util.Log
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.overdevx.reservationapp.data.model.BookingList
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
@@ -10,9 +13,11 @@ import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.UpdateBookingRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
+import com.overdevx.reservationapp.data.paging.BookingRoomPagingSource
 import com.overdevx.reservationapp.data.remote.ApiService
 import com.overdevx.reservationapp.data.remote.ApiService2
 import com.overdevx.reservationapp.utils.Resource
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class BookingRespository @Inject constructor(
@@ -135,6 +140,16 @@ class BookingRespository @Inject constructor(
             Log.e("RetrofitError", "Error: ${e.message}")
             Resource.Error(e)
         }
+    }
+
+    fun getBookingRooms(): Pager<Int,BookingList> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 4, // Jumlah item per halaman
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { BookingRoomPagingSource(authenticateApiService) }
+        )
     }
 
 

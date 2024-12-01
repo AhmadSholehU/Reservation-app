@@ -74,8 +74,10 @@ interface ApiService {
     @GET("booking-rooms")
     suspend fun getBookinglist(): BookingListResponse
 
-
-
+    @GET("booking-rooms")
+    suspend fun getBookingRooms(
+        @Query("page") page: Int
+    ): BookingListResponse
 
 }
 

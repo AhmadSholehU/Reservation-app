@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +57,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.items
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.BookingList
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
@@ -100,6 +106,8 @@ fun BookingListScreen(
     var selectedEndDate by remember { mutableStateOf<String?>(null) }
 
     val bookingListState by bookingViewModel.getBookingListState.collectAsStateWithLifecycle()
+    val bookingRooms=bookingViewModel.bookingRooms.collectAsLazyPagingItems()
+
     val coroutineScope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     val state = rememberPullToRefreshState()
@@ -112,7 +120,7 @@ fun BookingListScreen(
         }
     }
     LaunchedEffect(Unit) {
-        bookingViewModel.getBookingList()
+        //bookingViewModel.getBookingList()
     }
     Column(modifier = Modifier.padding(10.dp)) {
         TopBarSection(onNavigateBack = { onNavigateBack() })
@@ -165,6 +173,85 @@ fun BookingListScreen(
 
                 }
 
+            }
+
+            LazyColumn(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(10.dp)
+
+            ) {
+                items(bookingRooms) { bookingRoom ->
+                    bookingRoom?.let {
+                        BookingItem(booking = it, onClick = {
+                            selectedBooking = it
+                            selectedStartDate = it.Booking.start_date
+                            selectedEndDate = it.Booking.end_date
+                            showStatusDialog = true
+                        })
+                    }
+
+                }
+                // Indikator loading
+                bookingRooms.apply {
+                    when {
+                        loadState.refresh is LoadState.Loading -> {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
+                        loadState.append is LoadState.Loading -> {
+//                            item {
+//                                Column(
+//                                    modifier = Modifier
+//                                        .fillMaxWidth()
+//                                        .padding(16.dp),
+//                                    horizontalAlignment = Alignment.CenterHorizontally
+//                                ) {
+//                                    val e = loadState.append as LoadState.Error
+//                                    Text(
+//                                        text = "Gagal memuat data: ${e.error.localizedMessage}",
+//                                        color = Color.Red,
+//                                        modifier = Modifier.padding(bottom = 8.dp)
+//                                    )
+//                                    Button(
+//                                        onClick = { retry() }
+//                                    ) {
+//                                        Text("Coba Lagi")
+//                                    }
+//                                }
+//                            }
+                        }
+                        loadState.refresh is LoadState.Error -> {
+//                            val e = loadState.refresh as LoadState.Error
+//                            item {
+//                                Column(
+//                                    modifier = Modifier
+//                                        .fillMaxWidth()
+//                                        .padding(16.dp),
+//                                    horizontalAlignment = Alignment.CenterHorizontally
+//                                ) {
+//                                    Text(
+//                                        text = "Gagal memuat data awal: ${e.error.localizedMessage}",
+//                                        color = Color.Red,
+//                                        modifier = Modifier.padding(bottom = 8.dp)
+//                                    )
+//                                    Button(
+//                                        onClick = { retry() }
+//                                    ) {
+//                                        Text("Coba Lagi")
+//                                    }
+//                                }
+//                            }
+
+                        }
+                    }
+                }
             }
         }
 
@@ -325,17 +412,20 @@ private fun BookingItem(
     Row(
         modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Max)
             .clip(RoundedCornerShape(10.dp))
-            .background(white)
+            .background(white),
+        verticalAlignment = Alignment.Top
     ) {
         Box(
             modifier = Modifier
+                .fillMaxHeight()
+                .width(8.dp)
                 .background(primary)
-                .size(width = 8.dp, height = 130.dp)
 
         )
         Spacer(modifier = Modifier.width(10.dp))
-        Column(modifier = Modifier.padding(5.dp)) {
+        Column(modifier = Modifier.padding(5.dp).width(220.dp)) {
             Text(
                 text = "ID BOOKING : ${booking.nomor_pesanan}",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),

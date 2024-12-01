@@ -23,6 +23,10 @@ object NetworkModule {
     var BASE_URL ="http://192.168.1.108:3000/api/"
     var BASE_URL2 ="http://192.168.39.85:3000/api/"
     var BASE_URL3 ="http://192.168.123.155:3000/api/"
+
+    private const val PREF_BASE_URL = "base_url"
+    private const val DEFAULT_BASE_URL = "http://192.168.123.155:3000/api/"
+
     @Provides
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
@@ -50,9 +54,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient,sharedPreferences: SharedPreferences): Retrofit {
+        val baseUrl = sharedPreferences.getString(PREF_BASE_URL, DEFAULT_BASE_URL) ?: DEFAULT_BASE_URL
+
         return Retrofit.Builder()
-            .baseUrl(BASE_URL3)
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .client(okHttpClient) // Tambahkan OkHttpClient
             .build()

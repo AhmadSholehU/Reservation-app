@@ -326,7 +326,7 @@ private fun MainSection(
                         )
                     }
             ) {
-                val newDomain = "192.168.1.108"
+                val newDomain = "192.168.123.155"
                 val newfoto = replaceDomain(fotoList[page], newDomain)
                 AsyncImage(
                     model = newfoto,

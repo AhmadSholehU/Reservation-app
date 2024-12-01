@@ -1,5 +1,7 @@
 package com.overdevx.reservationapp.data.presentation.home
 
+import android.content.SharedPreferences
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,12 +24,14 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarHalf
 import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -66,6 +70,7 @@ import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.yellow
+import com.overdevx.reservationapp.utils.ChangeBaseUrlScreen
 import com.overdevx.reservationapp.utils.Resource
 import com.overdevx.reservationapp.utils.formatCurrency
 import com.overdevx.reservationapp.utils.replaceDomain
@@ -73,6 +78,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +87,7 @@ fun HomeUserScreen(
     onClick: (Int, String, String, Int, Int,String,String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showDialog by remember { mutableStateOf(false) }
     val detailState by homeViewModel.detailServiceState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
@@ -100,7 +107,11 @@ fun HomeUserScreen(
             .padding(start = 16.dp, end = 16.dp)
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        HeaderSection(homeViewModel, Modifier.align(Alignment.CenterHorizontally))
+        HeaderSection(homeViewModel,
+            Modifier.align(Alignment.CenterHorizontally),
+            onClick = {
+                showDialog=true
+            })
         Spacer(modifier = Modifier.height(16.dp))
         PullToRefreshBox(
             state = state,
@@ -164,12 +175,23 @@ fun HomeUserScreen(
                 else -> {}
             }
         }
+        
+        if(showDialog){
+            ChangeBaseUrlDialog(
+                baseUrl = homeViewModel.getBaseUrl(),
+                onDismiss = {showDialog=false},
+                onSave = { newUrl->
+                    homeViewModel.saveBaseUrl(newUrl)
+                    showDialog=false
+                    //Toast.makeText(LocalContext.current, "Base URL updated!", Toast.LENGTH_SHORT).show()
+                })
+        }
     }
 }
 
 
 @Composable
-private fun HeaderSection(homeViewModel: HomeViewModel, modifier: Modifier = Modifier) {
+private fun HeaderSection(homeViewModel: HomeViewModel, modifier: Modifier = Modifier,onClick: () -> Unit) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = "ASRAMA BALAI DIKLAT",
@@ -192,7 +214,7 @@ private fun HeaderSection(homeViewModel: HomeViewModel, modifier: Modifier = Mod
 
         Button(
             onClick = {
-                //homeViewModel.fetchDetailService()
+               onClick()
             },
             shape = RoundedCornerShape(25.dp),
             colors = ButtonDefaults.buttonColors(
@@ -247,7 +269,8 @@ private fun Item(
         .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
         .background(white)
         .clickable { onClick() }) {
-        val newDomain = "192.168.1.108"
+
+        val newDomain = "192.168.123.155"
         val newfoto = replaceDomain(fotoList[0],newDomain)
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
@@ -362,3 +385,36 @@ fun RatingBar(
 
 
 }
+
+@Composable
+fun ChangeBaseUrlDialog(
+    baseUrl: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var newBaseUrl by remember { mutableStateOf(baseUrl) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Change Base URL") },
+        text = {
+            TextField(
+                value = newBaseUrl,
+                onValueChange = { newBaseUrl = it },
+                label = { Text("Base URL") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(newBaseUrl) }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+

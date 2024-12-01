@@ -72,6 +72,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.overdevx.reservationapp.data.presentation.SplashScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.HomeControlScreen
 
@@ -82,6 +84,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installSplashScreen().setKeepOnScreenCondition { false }
         enableEdgeToEdge()
         setContent {
             ReservationAppTheme {
@@ -324,6 +327,23 @@ class MainActivity : ComponentActivity() {
                         onNavigateBack = { navController.navigateUp() }
                     )
                 }
+
+                composable<SplashScreenRoute> {
+                    SplashScreen(
+                        onSplashComplete = {
+                            val token = tokenProvider.getToken()
+                            if (token.isNullOrEmpty()) {
+                                navController.navigate(LoginRoute) {
+                                    popUpTo(SplashScreenRoute) { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate(HomeRoute) {
+                                    popUpTo(SplashScreenRoute) { inclusive = true }
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
     }
@@ -409,6 +429,9 @@ data object MonitoringRoute
 
 @Serializable
 data object HistoryRoute
+
+@Serializable
+data object SplashScreenRoute
 
 @Serializable
 data class RoomsRouteUser(

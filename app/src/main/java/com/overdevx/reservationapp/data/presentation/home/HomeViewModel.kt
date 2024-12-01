@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.data.presentation.home
 
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.overdevx.reservationapp.data.model.DetailService
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val detailServiceRepository: DetailServiceRepository
+    private val detailServiceRepository: DetailServiceRepository,
+    private val sharedPreferences: SharedPreferences
 ):ViewModel() {
     private val _detailServiceState = MutableStateFlow<Resource<List<DetailService>>>(Resource.Idle)
     val detailServiceState: StateFlow<Resource<List<DetailService>>> = _detailServiceState
@@ -30,5 +32,15 @@ class HomeViewModel @Inject constructor(
             val result = detailServiceRepository.getDetailService()
             _detailServiceState.value = result
         }
+    }
+
+    fun getBaseUrl(): String {
+        return sharedPreferences.getString("base_url", "http://192.168.123.155:3000/api/") ?: ""
+    }
+
+    fun saveBaseUrl(newUrl: String) {
+        sharedPreferences.edit()
+            .putString("base_url", newUrl)
+            .apply()
     }
 }

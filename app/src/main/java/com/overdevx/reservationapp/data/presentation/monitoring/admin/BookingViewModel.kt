@@ -2,6 +2,7 @@ package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.cachedIn
 import com.overdevx.reservationapp.data.model.BookingList
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
@@ -43,7 +44,7 @@ class BookingViewModel @Inject constructor(
     private val _getBookingListState = MutableStateFlow<Resource<List<BookingList>>>(Resource.Idle)
     val getBookingListState: StateFlow<Resource<List<BookingList>>> = _getBookingListState
 
-
+    val bookingRooms = bookingRepository.getBookingRooms().flow.cachedIn(viewModelScope)
     fun bookRoom(roomId: Int, startDate: String,endDate:String) {
         viewModelScope.launch {
             _bookingState.value = Resource.Loading

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
 import com.overdevx.reservationapp.data.model.BookingList
+import com.overdevx.reservationapp.data.model.BookingListResponse
+import com.overdevx.reservationapp.data.model.BookingListinitResponse
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
@@ -41,11 +43,15 @@ class BookingViewModel @Inject constructor(
     private val _getKetersediaanState = MutableStateFlow<Resource<KetersediaanResponse>>(Resource.Idle)
     val getKetersediaanState: StateFlow<Resource<KetersediaanResponse>> = _getKetersediaanState
 
-    private val _getBookingListState = MutableStateFlow<Resource<List<BookingList>>>(Resource.Idle)
-    val getBookingListState: StateFlow<Resource<List<BookingList>>> = _getBookingListState
+    private val _bookingListState = MutableStateFlow<Resource<BookingListinitResponse>>(Resource.Idle)
+    val bookingListState: StateFlow<Resource<BookingListinitResponse>> = _bookingListState
 
-    val bookingRooms = bookingRepository.getBookingRooms().flow.cachedIn(viewModelScope)
-    fun bookRoom(roomId: Int, startDate: String,endDate:String) {
+    private val _getBookingListbyIdState = MutableStateFlow<Resource<BookingListResponse>>(Resource.Idle)
+    val getBookingListbyIdState: StateFlow<Resource<BookingListResponse>> = _getBookingListbyIdState
+
+    //val bookingRooms = bookingRepository.getBookingRooms().flow.cachedIn(viewModelScope)
+    val bookingList = bookingRepository.getBookingList().flow.cachedIn(viewModelScope)
+    fun bookRoom(roomId: List<Int>, startDate: String,endDate:String) {
         viewModelScope.launch {
             _bookingState.value = Resource.Loading
             val result = bookingRepository.booking(roomId, startDate,endDate)
@@ -85,11 +91,19 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    fun getBookingList() {
+//    fun getBookingList() {
+//        viewModelScope.launch {
+//            _bookingListState.value = Resource.Loading
+//            val result = bookingRepository.getBookingList()
+//            _bookingListState.value = result  // Update the state with the fetched data
+//        }
+//    }
+
+    fun getBookingListbyId(bookingRoomId: Int) {
         viewModelScope.launch {
-            _getBookingListState.value = Resource.Loading
-            val result = bookingRepository.getBookingList()
-            _getBookingListState.value = result  // Update the state with the fetched data
+            _getBookingListbyIdState.value = Resource.Loading
+            val result = bookingRepository.getBookingRoombyId(bookingRoomId)
+            _getBookingListbyIdState.value = result  // Update the state with the fetched data
         }
     }
 

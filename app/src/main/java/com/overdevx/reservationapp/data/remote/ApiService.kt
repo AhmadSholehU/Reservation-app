@@ -1,6 +1,7 @@
 package com.overdevx.reservationapp.data.remote
 
 import com.overdevx.reservationapp.data.model.BookingListResponse
+import com.overdevx.reservationapp.data.model.BookingListinitResponse
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
@@ -42,7 +43,7 @@ interface ApiService {
     suspend fun getBuilding(): BuildingResponse
 
     @Headers("Content-Type: application/json")
-    @POST("booking-rooms")
+    @POST("booking-rooms/multruang")
     suspend fun booking(@Body bookRequest: BookingRequest): Response<BookingResponse>
 
     @Headers("Content-Type: application/json")
@@ -72,11 +73,18 @@ interface ApiService {
     suspend fun getKetersediaan(@Path("id") roomId: Int): KetersediaanResponse
 
     @GET("booking-rooms")
-    suspend fun getBookinglist(): BookingListResponse
+    suspend fun getBookinglist(
+        @Query("page") page: Int
+    ): BookingListinitResponse
 
-    @GET("booking-rooms")
+    @GET("booking-details")
     suspend fun getBookingRooms(
         @Query("page") page: Int
+    ): BookingListResponse
+
+    @GET("booking-details/{id}")
+    suspend fun getBookingRoomsbyId(
+        @Path("id") id: Int
     ): BookingListResponse
 
 }

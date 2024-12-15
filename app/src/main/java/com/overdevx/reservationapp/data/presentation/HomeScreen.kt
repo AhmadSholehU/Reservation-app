@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -96,7 +97,7 @@ fun HomeScreen(
     val onRefresh: () -> Unit = {
         isRefreshing = true
         coroutineScope.launch {
-            delay(2000)
+            delay(500)
             viewModel.fetchBuilding()
             isRefreshing = false
         }
@@ -112,7 +113,16 @@ fun HomeScreen(
         2 to "15 Kamar",
         3 to "10 Kamar"
     )
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.img_line),
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clipToBounds()
+                .align(Alignment.BottomEnd)
+        )
         Column(modifier = Modifier.padding(start = 10.dp, end = 10.dp)) {
             TopBarSection(
                 onNavigateBack = { onNavigateBack() },
@@ -138,8 +148,6 @@ fun HomeScreen(
                                 LazyColumn(
                                     modifier = modifier
                                         .fillMaxSize()
-                                        .padding(10.dp)
-
                                 ) {
                                     items(buildings, key = { it.building_id }) { building ->
                                         val imageResId = buildingImages[building.building_id]
@@ -159,6 +167,10 @@ fun HomeScreen(
                                             roomCount = roomCount
                                         )
                                     }
+                                    item{
+
+                                    }
+
                                 }
 
                             }
@@ -196,14 +208,7 @@ fun HomeScreen(
                 }
             }
         }
-        Image(
-            painter = painterResource(id = R.drawable.img_line),
-            contentDescription = null,
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-        )
+
     }
 
 

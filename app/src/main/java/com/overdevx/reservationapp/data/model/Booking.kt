@@ -14,7 +14,7 @@ data class Booking(
 )
 
 data class BookingRequest(
-    val room_id:Int,
+    val rooms:List<Int>,
     val start_date:String,
     val end_date:String
 )

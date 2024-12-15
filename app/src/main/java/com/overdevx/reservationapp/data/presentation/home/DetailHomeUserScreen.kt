@@ -1,8 +1,13 @@
 package com.overdevx.reservationapp.data.presentation.home
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,6 +61,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -77,12 +83,14 @@ import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.utils.AutoResizedText
 import com.overdevx.reservationapp.utils.Resource
 import com.overdevx.reservationapp.utils.formatCurrency
 import com.overdevx.reservationapp.utils.replaceDomain
 import kotlinx.serialization.json.Json
 import kotlin.math.absoluteValue
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun DetailHomeUserScreen(
     id: Int,
@@ -95,6 +103,8 @@ fun DetailHomeUserScreen(
     onClick: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: RoomsViewModel = hiltViewModel(),
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
     modifier: Modifier = Modifier
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -120,6 +130,8 @@ fun DetailHomeUserScreen(
                     deskripsi,
                     jumlahKamar,
                     foto,
+                    animatedVisibilityScope,
+                    sharedTransitionScope
 //                    selectedBuilding = {
 //                        if (it == "Gedung Asrama A") {
 //                            buildingId = 1
@@ -131,73 +143,75 @@ fun DetailHomeUserScreen(
 //                    }
                 )
             }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = "$jumlahKamar Kamar Tersedia",
-            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-            fontSize = 16.sp,
-            color = primary,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.align(Alignment.End)
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        Box(
-            modifier = Modifier
-                .padding(bottom = 16.dp)
+            item {
 
-        ) {
-            Button(
-                onClick = {
-
-                    if (roomName == "Kamar") {
-                        showDialog = true
-                    } else {
-                        val formatedHarga = formatCurrency(harga)
-                        // Aksi kirim data ke WhatsApp
-                        val message = "Saya ingin memesan $roomName dengan tarif Rp. $formatedHarga per hari. Mohon konfirmasikan apakah gedung tersebut masih tersedia untuk tanggal yang saya inginkan."
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse(
-                                String.format(
-                                    "https://api.whatsapp.com/send?phone=%s&text=%s",
-                                    "+62 8987472054", // Ganti dengan nomor WhatsApp
-                                    message
-                                )
-                            )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize() ,// Tambahkan padding jika diperlukan
+                    contentAlignment = Alignment.BottomCenter // Posisikan tombol di bagian bawah
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                        Spacer(modifier = Modifier.weight(1f)) // Berikan ruang fleksibel
+                        Text(
+                            text = "$jumlahKamar Kamar Tersedia",
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                            fontSize = 12.nonScaledSp,
+                            color = primary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(Alignment.End)
                         )
-                        context.startActivity(intent)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Button(
+                            onClick = {
+                                if (roomName == "Kamar") {
+                                    showDialog = true
+                                } else {
+                                    val formatedHarga = formatCurrency(harga)
+                                    val message =
+                                        "Saya ingin memesan $roomName dengan tarif Rp. $formatedHarga per hari. Mohon konfirmasikan apakah gedung tersebut masih tersedia untuk tanggal yang saya inginkan."
+                                    val intent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(
+                                            String.format(
+                                                "https://api.whatsapp.com/send?phone=%s&text=%s",
+                                                "+62 8987472054",
+                                                message
+                                            )
+                                        )
+                                    )
+                                    context.startActivity(intent)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                ,
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = primary,
+                            )
+                        ) {
+                            Text(
+                                text = "PESAN SEKARANG",
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                fontSize = 14.nonScaledSp,
+                                letterSpacing = 5.sp,
+                                color = white,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
+                }
 
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .align(Alignment.BottomCenter),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = primary,
-                )
-            ) {
-                Text(
-                    text = "PESAN SEKARANG",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 18.sp,
-                    letterSpacing = 5.sp,
-                    color = white,
-                    textAlign = TextAlign.Center,
-                )
             }
-
-
         }
-
         if (showDialog) {
             //viewModel.fetchRooms(1)
             PesanDialog(
                 selectedRoomNumber = selectedRoomNumber,
                 onDismiss = {
-                    showDialog = false },
+                    showDialog = false
+                },
                 onDialogAction = { roomNumber ->
                     var buildingName = ""
                     if (buildingId == 1) {
@@ -261,13 +275,13 @@ private fun TopBarSection(
             )
         }
         Spacer(modifier = modifier.width(10.dp))
-
-        Text(
+        AutoResizedText(
             text = "Detail",
-            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-            fontSize = 20.sp,
             color = secondary,
-            textAlign = TextAlign.Center,
+            style = TextStyle(
+                fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
+                fontSize = 16.nonScaledSp,
+            ),
             modifier = Modifier.align(Alignment.CenterVertically)
         )
 
@@ -277,6 +291,7 @@ private fun TopBarSection(
 
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MainSection(
     id: Int,
@@ -286,146 +301,176 @@ private fun MainSection(
     deskripsi: String,
     jumlahKamar: Int,
     foto: String,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
     modifier: Modifier = Modifier
 ) {
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
     // Parsing JSON string menjadi List<String> menggunakan kotlinx.serialization
+    val context = LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    }
+    val imgUrl = sharedPreferences.getString("base_url","192.168.123.155")
     val fotoList: List<String> = remember {
         Json.decodeFromString(foto)
     }
     var showDialog by remember { mutableStateOf(false) }
     val state = rememberPagerState { fotoList.size }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-
-    ) {
-        HorizontalPager(
-            state = state,
-            contentPadding = PaddingValues(end = 64.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) { page ->
-            Box(
-                Modifier
-                    .size(300.dp)
-                    .graphicsLayer {
-                        // Calculate the absolute offset for the current page from the
-                        // scroll position. We use the absolute value which allows us to mirror
-                        // any effects for both directions
-                        val pageOffset = (
-                                (state.currentPage - page) + state
-                                    .currentPageOffsetFraction
-                                ).absoluteValue
-
-                        // We animate the alpha, between 50% and 100%
-                        alpha = lerp(
-                            start = 0.3f,
-                            stop = 1f,
-                            fraction = 1f - pageOffset.coerceIn(0f, 1f)
-                        )
-                    }
-            ) {
-                val newDomain = "192.168.123.155"
-                val newfoto = replaceDomain(fotoList[page], newDomain)
-                AsyncImage(
-                    model = newfoto,
-                    contentDescription = null,
-                    Modifier
-                        .fillMaxSize()
-                        .padding(5.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(
-            Modifier
-                .wrapContentHeight()
+    with(sharedTransitionScope) {
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.CenterHorizontally)
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.Center
+
         ) {
-            repeat(state.pageCount) { iteration ->
-                val color = if (state.currentPage == iteration) Color.DarkGray else Color.LightGray
+            HorizontalPager(
+                state = state,
+                contentPadding = PaddingValues(end = 64.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
                 Box(
-                    modifier = Modifier
-                        .padding(2.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                        .size(10.dp)
-                )
-            }
-        }
+                    Modifier
+                        .size(300.dp)
+                        .graphicsLayer {
+                            // Calculate the absolute offset for the current page from the
+                            // scroll position. We use the absolute value which allows us to mirror
+                            // any effects for both directions
+                            val pageOffset = (
+                                    (state.currentPage - page) + state
+                                        .currentPageOffsetFraction
+                                    ).absoluteValue
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                Text(
-                    text = "$roomName",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 30.sp,
-                    color = secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                )
-
-                Row {
-                    RatingBar(
-                        modifier = Modifier
-                            .size(20.dp),
-                        rating = rating.toDouble(),
-                        starsColor = Color.Yellow
-                    )
-                    Text(
-                        text = rating,
-                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                        fontSize = 16.sp,
-                        color = Color.Red,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
+                            // We animate the alpha, between 50% and 100%
+                            alpha = lerp(
+                                start = 0.3f,
+                                stop = 1f,
+                                fraction = 1f - pageOffset.coerceIn(0f, 1f)
+                            )
+                        }
+                ) {
+                    val ipAddress = imgUrl
+                        ?.split("://")?.get(1) // Menghapus "http://"
+                        ?.split(":")?.get(0)
+                    val newDomain = "192.168.123.155"
+                    val newfoto = ipAddress?.let { replaceDomain(fotoList[page], it) }
+                    AsyncImage(
+                        model = newfoto,
+                        contentDescription = null,
+                        Modifier
+//                            .sharedElement(
+//                                state = rememberSharedContentState(key = "image/$newfoto"),
+//                                animatedVisibilityScope = animatedVisibilityScope,
+//                                boundsTransform = { _, _ ->
+//                                    tween(durationMillis = 1000)
+//                                }
+//                            )
+                            .fillMaxSize()
+                            .padding(5.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop,
                     )
                 }
 
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Column(modifier = Modifier) {
-                val formatHarga = formatCurrency(harga)
-                Text(
-                    text = "Rp$formatHarga",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 20.sp,
-                    color = secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                )
-                Text(
-                    text = "/Hari/Kamar",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                    fontSize = 16.sp,
-                    color = gray,
-                )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                Modifier
+                    .wrapContentHeight()
+                    .fillMaxWidth()
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(state.pageCount) { iteration ->
+                    val color =
+                        if (state.currentPage == iteration) Color.DarkGray else Color.LightGray
+                    Box(
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .size(10.dp)
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    AutoResizedText(
+                        text = "$roomName",
+                        color = secondary,
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 20.nonScaledSp,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier
+                    )
+
+                    Row {
+                        RatingBar(
+                            modifier = Modifier
+                                .size(20.dp),
+                            rating = rating.toDouble(),
+                            starsColor = Color.Yellow
+                        )
+                        AutoResizedText(
+                            text = rating,
+                            color = primary,
+                            style = TextStyle(
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                                fontSize = 12.nonScaledSp,
+                                textAlign = TextAlign.Center
+                            ),
+                            modifier = Modifier
+                        )
+                    }
+
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Column(modifier = Modifier) {
+                    val formatHarga = formatCurrency(harga)
+                    AutoResizedText(
+                        text = "Rp$formatHarga",
+                        color = secondary,
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 16.nonScaledSp,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier
+                    )
+                    AutoResizedText(
+                        text = "/Hari/Kamar",
+                        color = gray,
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                            fontSize = 12.nonScaledSp,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            FasilitasSection(id)
+            Spacer(modifier = Modifier.height(16.dp))
+            AutoResizedText(
+                text = "$deskripsi",
+                color = gray,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                    fontSize = 14.nonScaledSp,
+                    textAlign = TextAlign.Justify
+                ),
+                modifier = Modifier
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        FasilitasSection(id)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "$deskripsi",
-            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-            fontSize = 18.sp,
-            color = gray,
-            textAlign = TextAlign.Justify,
-            modifier = Modifier
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
     }
 
 
@@ -478,12 +523,15 @@ private fun FasilitasSection(id: Int, modifier: Modifier = Modifier) {
     val fasilitasList = fasilitasMap[id] ?: emptyList()
 
     Column(modifier = Modifier) {
-        Text(
+        AutoResizedText(
             text = "Fasilitas Kamar :",
-            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-            fontSize = 16.sp,
-            color = secondary,
-            textAlign = TextAlign.Center,
+            color = gray,
+            style = TextStyle(
+                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                fontSize = 12.nonScaledSp,
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier
         )
         Spacer(modifier = Modifier.height(10.dp))
         LazyRow(
@@ -501,12 +549,15 @@ private fun FasilitasSection(id: Int, modifier: Modifier = Modifier) {
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
+                    AutoResizedText(
                         text = fasilitas.first, // Nama fasilitas
-                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                        fontSize = 16.sp,
                         color = gray,
-                        textAlign = TextAlign.Start
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 12.nonScaledSp,
+                            textAlign = TextAlign.Start
+                        ),
+                        modifier = Modifier
                     )
                 }
             }
@@ -533,15 +584,18 @@ private fun PesanDialog(
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
     AlertDialog(
         onDismissRequest = {
-            onDismiss()},
+            onDismiss()
+        },
         title = {
             Column(Modifier.fillMaxWidth()) {
-                Text(
+                AutoResizedText(
                     text = "DAFTAR RUANGAN",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 20.sp,
                     color = secondary,
-                    textAlign = TextAlign.Center,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                        fontSize = 14.nonScaledSp,
+                        textAlign = TextAlign.Center
+                    ),
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
@@ -604,12 +658,14 @@ private fun PesanDialog(
                                     groupedRooms.forEach { (floor, rooms) ->
                                         item {
                                             // Header untuk setiap lantai
-                                            Text(
+                                            AutoResizedText(
                                                 text = floor,
-                                                fontSize = 16.sp,
                                                 color = secondary,
-                                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                                modifier = Modifier.padding(vertical = 8.dp)
+                                                style = TextStyle(
+                                                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                                                    fontSize = 12.nonScaledSp,
+                                                ),
+                                                modifier = Modifier.padding(vertical = 5.dp)
                                             )
                                         }
 
@@ -676,12 +732,14 @@ private fun PesanDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
-                    Text(
+                    AutoResizedText(
                         text = "Kamar $selectedRoom terpilih",
-                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                        fontSize = 18.sp,
                         color = secondary,
-                        textAlign = TextAlign.Center,
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 14.nonScaledSp,
+                            textAlign = TextAlign.Center
+                        ),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -697,12 +755,14 @@ private fun PesanDialog(
                             .align(Alignment.CenterHorizontally)
                             .fillMaxWidth()
                     ) {
-                        Text(
+                        AutoResizedText(
                             text = "KONFIRMASI PESANAN",
-                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                            fontSize = 16.sp,
                             color = white,
-                            textAlign = TextAlign.Center,
+                            style = TextStyle(
+                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                fontSize = 12.nonScaledSp,
+                                textAlign = TextAlign.Center
+                            ),
                             modifier = Modifier
                         )
                     }
@@ -768,12 +828,14 @@ private fun RoomItem(
                 .align(Alignment.CenterVertically)
                 .padding(5.dp),
         ) {
-            Text(
+            AutoResizedText(
                 text = "${room.room_number}",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 16.sp,
                 color = textColor,
-                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 12.nonScaledSp,
+                    textAlign = TextAlign.Center
+                ),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
@@ -801,11 +863,14 @@ private fun AsramaButton(text: String, isSelected: Boolean, onClick: () -> Unit)
             .size(height = 40.dp, width = Dp.Unspecified)
 
     ) {
-        Text(
+        AutoResizedText(
             text = text,
-            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
+            color = if(isSelected) white else secondary,
+            style = TextStyle(
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 14.nonScaledSp,
+                textAlign = TextAlign.Center
+            ),
             modifier = Modifier
         )
     }

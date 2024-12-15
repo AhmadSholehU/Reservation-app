@@ -37,6 +37,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -87,11 +88,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -140,6 +145,9 @@ fun AdminRoomScreen(
 ) {
     // State untuk menyimpan ruangan yang dipilih
     var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
+    var selectedRoomNumbers by remember { mutableStateOf(emptyList<String>()) }
+    var selectedRoomIds = remember { mutableStateListOf<Int>() }
+    var selectedRoomIdss by remember { mutableStateOf(emptyList<Int>()) }
     var showDialog by remember { mutableStateOf(false) }
     var showLoadingDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
@@ -167,10 +175,11 @@ fun AdminRoomScreen(
     LaunchedEffect(buildingId) {
         viewModel.fetchRooms(buildingId)
     }
-    LaunchedEffect(selectedRoomNumber) {
-        selectedRoomNumber?.let {
-            viewModelBooking.getBookingRoom(room_id ?: return@LaunchedEffect)
-            viewModelBooking.getKetersediaan(room_id ?: return@LaunchedEffect)
+    LaunchedEffect(selectedRoomIdss) {
+        unselectableDates.clear()
+        selectedRoomIdss.forEach { roomId ->
+            //viewModelBooking.getBookingRoom(room_id ?: return@LaunchedEffect)
+            viewModelBooking.getKetersediaan(roomId)
         }
     }
     Column(
@@ -184,15 +193,11 @@ fun AdminRoomScreen(
         RoomSection(
             viewModel = viewModel,
             buildingId = buildingId,
-            selectedRoomNumber = selectedRoomNumber,
-            onRoomSelected = { selectedRoom, roomId, roomStatus ->
-                selectedRoomNumber = selectedRoom
-                if (roomStatus != null) {
-                    current_room_status = roomStatus
-                }
-                if (roomId != null) {
-                    room_id = roomId
-                }
+            selectedRoomNumber = selectedRoomNumbers,
+            selectedRoomIds = selectedRoomIdss,
+            onRoomsSelected = { newSelectedIds, newSelectedNumbers ->
+                selectedRoomIdss = newSelectedIds
+                selectedRoomNumbers = newSelectedNumbers
             },
             showDialog = { shouldShow ->
                 // Perubahan nilai showDialog dilakukan di sini
@@ -204,11 +209,11 @@ fun AdminRoomScreen(
         // Tampilkan dialog jika showDialog bernilai true
         if (showDialog) {
             StatusDialog(
-                selectedRoomNumber = selectedRoomNumber,
+                selectedRoomNumbers = selectedRoomNumbers,
                 onDismiss = { showDialog = false },
                 buildingName = buildingName,
                 onBooking = {
-                    selectedRoomNumber?.let {
+                    selectedRoomNumbers.let {
                         var statusId = when (room_status) {
                             "Tersedia" -> 1
                             "Tidak Tersedia" -> 2
@@ -222,7 +227,7 @@ fun AdminRoomScreen(
                         } else if (current_room_status != "booked" && room_status == "Terbooking") {
                             // Use create booking endpoint if status changes to booked
                             Log.d("startDate", startDate)
-                            viewModelBooking.bookRoom(room_id, startDate, endDate)
+                            viewModelBooking.bookRoom(selectedRoomIdss, startDate, endDate)
                         } else {
                             // Just update room status if not booking
                             viewModelBooking.updateRoomStatus(room_id, statusId)
@@ -278,11 +283,11 @@ fun AdminRoomScreen(
 
         when (updateRoomState) {
             is Resource.Loading -> {
-               showLoadingDialog=true
+                showLoadingDialog = true
             }
 
             is Resource.Success -> {
-                showLoadingDialog=false
+                showLoadingDialog = false
                 showSuccessDialog = true
                 SuccessDialog(
                     onDismiss = { showDialog = false },
@@ -545,8 +550,9 @@ private fun RoomSection(
     modifier: Modifier = Modifier,
     viewModel: RoomsViewModel,
     buildingId: Int,
-    selectedRoomNumber: String?,
-    onRoomSelected: (String?, Int?, String?) -> Unit,
+    selectedRoomNumber: List<String>,
+    selectedRoomIds: List<Int>,
+    onRoomsSelected: (List<Int>, List<String>) -> Unit,
     showDialog: (Boolean) -> Unit,
 ) {
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
@@ -561,6 +567,7 @@ private fun RoomSection(
             isRefreshing = false
         }
     }
+    var selectedRooms by remember { mutableStateOf(selectedRoomIds) }
     Column(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
             state = state,
@@ -588,16 +595,25 @@ private fun RoomSection(
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             ) {
                                 items(availableRooms, key = { it.room_id }) { room ->
+                                    val isSelected = selectedRoomIds.contains(room.room_id)
                                     RoomAdminItem(
                                         modifier = Modifier.padding(5.dp),
                                         room = room,
-                                        isSelected = selectedRoomNumber == room.room_number,
-                                        onClick = {
-                                            onRoomSelected(
-                                                if (selectedRoomNumber == room.room_number) null else room.room_number,
-                                                room.room_id,
-                                                room.status_name
-                                            )
+                                        isSelected = isSelected,
+                                        onRoomClicked = { roomId, roomNumber ->
+                                            val updatedRoomIds =
+                                                if (selectedRoomIds.contains(roomId)) {
+                                                    selectedRoomIds - roomId
+                                                } else {
+                                                    selectedRoomIds + roomId
+                                                }
+                                            val updatedRoomNumbers =
+                                                if (selectedRoomNumber.contains(roomNumber)) {
+                                                    selectedRoomNumber - roomNumber
+                                                } else {
+                                                    selectedRoomNumber + roomNumber
+                                                }
+                                            onRoomsSelected(updatedRoomIds, updatedRoomNumbers)
                                         }
                                     )
                                 }
@@ -625,10 +641,13 @@ private fun RoomSection(
         }
 
         ButtonSection(
-            selectedRoom = selectedRoomNumber,
+            selectedRoomNumbers = selectedRoomNumber,
             showDialog = showDialog,
             onShowDialog = {
-                if (selectedRoomNumber != null) {
+//                if (selectedRoomNumber != null) {
+//                    showDialog(true)
+//                }
+                if (selectedRoomNumber.isNotEmpty()) {
                     showDialog(true)
                 }
             }
@@ -644,7 +663,7 @@ private fun RoomAdminItem(
     modifier: Modifier = Modifier,
     room: Room,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onRoomClicked: (Int, String) -> Unit,
 ) {
     val color = when (room.status_name) {
         "available" -> green
@@ -660,9 +679,7 @@ private fun RoomAdminItem(
             .size(100.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(backgroundColor)
-            .clickable {
-                onClick()
-            }
+            .clickable { onRoomClicked(room.room_id, room.room_number) }
 
     ) {
         Column(
@@ -692,160 +709,21 @@ private fun RoomAdminItem(
     }
 }
 
-@Composable
-fun LoadingShimmerEffect() {
-    fun Modifier.shimmerEffect(): Modifier = composed {
-        val colors = listOf(
-            Color.LightGray.copy(alpha = 0.3f),
-            Color.LightGray.copy(alpha = 0.2f),
-            Color.LightGray.copy(alpha = 0.3f),
-        )
-        val transition = rememberInfiniteTransition(label = "shimmer")
-        val shimmerAnimation = transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1000f,
-            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
-            label = "shimmer"
-        )
-        background(
-            Brush.linearGradient(
-                colors = colors,
-                start = Offset.Zero,
-                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
-            )
-        )
-    }
-    LazyColumn {
-        items(8) {
-            Row(
-                Modifier
-                    .fillMaxSize()
-                    .background(white)
-                    .clip(RoundedCornerShape(10.dp))
-
-            ) {
-                Row(Modifier.padding(10.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(height = 80.dp, width = 80.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .shimmerEffect()
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .shimmerEffect()
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Box(
-                            modifier = Modifier
-                                .width(100.dp)
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .shimmerEffect()
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Box(
-                            modifier = Modifier
-                                .width(100.dp)
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .shimmerEffect()
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun LoadingShimmerEffectPesanDialog() {
-    fun Modifier.shimmerEffect(): Modifier = composed {
-        val colors = listOf(
-            Color.LightGray.copy(alpha = 0.3f),
-            Color.LightGray.copy(alpha = 0.2f),
-            Color.LightGray.copy(alpha = 0.3f),
-        )
-        val transition = rememberInfiniteTransition(label = "shimmer")
-        val shimmerAnimation = transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1000f,
-            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
-            label = "shimmer"
-        )
-        background(
-            Brush.linearGradient(
-                colors = colors,
-                start = Offset.Zero,
-                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
-            )
-        )
-    }
-    LazyColumn {
-        items(2) {
-            Row(
-                Modifier
-                    .fillMaxSize()
-                    .background(white)
-                    .clip(RoundedCornerShape(10.dp))
-
-            ) {
-                Row(Modifier.padding(10.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(height = 80.dp, width = 80.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .shimmerEffect()
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .shimmerEffect()
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Box(
-                            modifier = Modifier
-                                .width(100.dp)
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .shimmerEffect()
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Box(
-                            modifier = Modifier
-                                .width(100.dp)
-                                .height(20.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .shimmerEffect()
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun ButtonSection(
     modifier: Modifier = Modifier,
-    selectedRoom: String?,
+    selectedRoomNumbers: List<String>,
     showDialog: (Boolean) -> Unit,
     onShowDialog: () -> Unit,
 ) {
     Spacer(modifier = Modifier.height(16.dp))
     Column(modifier = modifier.fillMaxWidth()) {
-        if (selectedRoom != null) {
+        if (selectedRoomNumbers.isNotEmpty()) {
+            val roomNumbersDisplay = selectedRoomNumbers.joinToString(", ")
+
             Text(
-                text = "Kamar $selectedRoom terpilih",
+                text = "Kamar terpilih: $roomNumbersDisplay",
                 fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                 fontSize = 18.sp,
                 color = secondary,
@@ -876,9 +754,10 @@ fun ButtonSection(
     }
 }
 
+
 @Composable
 fun StatusDialog(
-    selectedRoomNumber: String?,
+    selectedRoomNumbers: List<String>,
     onDismiss: () -> Unit,
     buildingName: String,
     onBooking: () -> Unit,
@@ -902,14 +781,35 @@ fun StatusDialog(
         onDismissRequest = onDismiss,
         title = {
             Column(Modifier.fillMaxWidth()) {
+
                 Text(
-                    text = "Silahkan pilih status $buildingName \n$selectedRoomNumber",
+                    text = "Silahkan pilih status $buildingName",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 20.sp,
                     color = secondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+                selectedRoomNumbers.forEach { roomNumber ->
+                    Row(modifier = Modifier) {
+                        Text(
+                            text = roomNumber,
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 20.sp,
+                            color = secondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                        Text(
+                            text = " - ",
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 20.sp,
+                            color = secondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                    }
+                }
             }
 
         },
@@ -1219,17 +1119,23 @@ fun Access(onLoginClick: () -> Unit, modifier: Modifier = Modifier) {
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                "Anda harus login sebagai Admin",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                "Oops, Layanan tidak ditemukan!",
+                fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
                 fontSize = 18.sp,
                 color = secondary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(10.dp))
+            ClickableAdminText(
+                onAdminClick = {
+                    onLoginClick()
+                }
+            )
+            Spacer(modifier = Modifier.height(10.dp))
             Button(
                 onClick = {
-                    onLoginClick()
+
                 },
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -1237,10 +1143,10 @@ fun Access(onLoginClick: () -> Unit, modifier: Modifier = Modifier) {
                 ),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .size(height = Dp.Unspecified, width = 100.dp)
+
             ) {
                 Text(
-                    text = "Login",
+                    text = "Lanjutkan Sebagai User",
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 16.sp,
                     color = white,
@@ -1293,6 +1199,148 @@ fun LoadingDialog(onDismissRequest: () -> Unit) {
             }
         }
 
+    }
+}
+
+@Composable
+fun LoadingShimmerEffect() {
+    fun Modifier.shimmerEffect(): Modifier = composed {
+        val colors = listOf(
+            Color.LightGray.copy(alpha = 0.3f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.3f),
+        )
+        val transition = rememberInfiniteTransition(label = "shimmer")
+        val shimmerAnimation = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
+            label = "shimmer"
+        )
+        background(
+            Brush.linearGradient(
+                colors = colors,
+                start = Offset.Zero,
+                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
+            )
+        )
+    }
+    LazyColumn {
+        items(8) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .background(white)
+                    .clip(RoundedCornerShape(10.dp))
+
+            ) {
+                Row(Modifier.padding(10.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(height = 80.dp, width = 80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LoadingShimmerEffectPesanDialog() {
+    fun Modifier.shimmerEffect(): Modifier = composed {
+        val colors = listOf(
+            Color.LightGray.copy(alpha = 0.3f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.3f),
+        )
+        val transition = rememberInfiniteTransition(label = "shimmer")
+        val shimmerAnimation = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
+            label = "shimmer"
+        )
+        background(
+            Brush.linearGradient(
+                colors = colors,
+                start = Offset.Zero,
+                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
+            )
+        )
+    }
+    LazyColumn {
+        items(2) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .background(white)
+                    .clip(RoundedCornerShape(10.dp))
+
+            ) {
+                Row(Modifier.padding(10.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(height = 80.dp, width = 80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1522,6 +1570,53 @@ fun DatePickerWithDateSelectableDatesSample(
             }
         )
     }
+}
+
+@Composable
+fun ClickableAdminText(
+    onAdminClick: () -> Unit // Callback ketika "Admin" diklik
+) {
+    val annotatedText = buildAnnotatedString {
+        append("Informasi ini memerlukan hak akses khusus pada aplikasi. Harap pastikan Anda memiliki izin yang sesuai untuk mengakses data ")
+
+        // Menambahkan teks "Admin" yang bisa diklik
+        pushStringAnnotation(
+            tag = "ADMIN", // Tag untuk mengidentifikasi bagian ini
+            annotation = "Admin" // Anda bisa menambahkan metadata di sini jika diperlukan
+        )
+        withStyle(
+            style = SpanStyle(
+                color = Color.Blue, // Warna teks untuk "Admin"
+                fontWeight = FontWeight.Bold // Gaya teks untuk "Admin"
+            )
+        ) {
+            append("Admin")
+        }
+        pop() // Mengakhiri string annotation
+        append(".")
+    }
+
+    // Menggunakan ClickableText untuk mendeteksi klik pada bagian teks tertentu
+    ClickableText(
+        text = annotatedText,
+        style = TextStyle(
+            fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            color = Color.Gray // Warna default untuk teks lainnya
+        ),
+        modifier = Modifier.padding(10.dp),
+        onClick = { offset ->
+            // Cek apakah bagian "Admin" yang diklik
+            annotatedText.getStringAnnotations(
+                tag = "ADMIN", // Tag yang digunakan sebelumnya
+                start = offset,
+                end = offset
+            ).firstOrNull()?.let { annotation ->
+                onAdminClick() // Jalankan aksi ketika "Admin" diklik
+            }
+        }
+    )
 }
 
 

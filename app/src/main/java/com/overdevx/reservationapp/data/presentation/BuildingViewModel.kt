@@ -38,7 +38,6 @@ class BuildingViewModel @Inject constructor(
 
     fun fetchBuilding() {
         viewModelScope.launch {
-            delay(1000)
             _buildingState.value = Resource.Loading
             _buildingState.value = repository.getBuilding()
         }

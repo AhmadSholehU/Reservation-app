@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.presentation.BuildingViewModel
+import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
 import com.overdevx.reservationapp.ui.theme.blue
 import com.overdevx.reservationapp.ui.theme.primary
@@ -55,6 +57,7 @@ import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.white2
 import com.overdevx.reservationapp.ui.theme.yellow
 import com.overdevx.reservationapp.ui.theme.yellow2
+import com.overdevx.reservationapp.utils.AutoResizedText
 
 @Composable
 fun HomeControlScreen(
@@ -65,14 +68,6 @@ fun HomeControlScreen(
     onMenu3Click: () -> Unit,
 ) {
     Box(modifier = modifier.fillMaxSize()){
-        Column(modifier = modifier.verticalScroll(rememberScrollState())) {
-            TopBarSection()
-            Spacer(modifier = Modifier.height(20.dp))
-            HeaderSection(modifier = Modifier.padding(start = 10.dp, end = 10.dp), onLogoutClick = { onLogoutClick() })
-            Spacer(modifier = Modifier.height(10.dp))
-            ContentSection(onMenu1Click, onMenu2Click, onMenu3Click)
-
-        }
         Image(
             painter = painterResource(id = R.drawable.img_line),
             contentDescription = null,
@@ -81,6 +76,17 @@ fun HomeControlScreen(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
         )
+        Column(modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .fillMaxSize()) {
+            TopBarSection()
+            Spacer(modifier = Modifier.height(20.dp))
+            HeaderSection(modifier = Modifier.padding(start = 10.dp, end = 10.dp), onLogoutClick = { onLogoutClick() })
+            Spacer(modifier = Modifier.height(10.dp))
+            ContentSection(onMenu1Click, onMenu2Click, onMenu3Click,Modifier.fillMaxSize())
+
+        }
+
     }
 
 }
@@ -100,19 +106,24 @@ private fun TopBarSection(
         )
         Spacer(modifier = Modifier.width(5.dp))
         Column(modifier = Modifier.align(Alignment.CenterVertically)) {
-            Text(
+            AutoResizedText(
                 text = "ASRAMA BALAI DIKLAT",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
-                fontSize = 20.sp,
                 color = secondary,
-                letterSpacing = 3.sp,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
+                    fontSize = 16.nonScaledSp,
+                    textAlign = TextAlign.Center,
+                    letterSpacing = 3.nonScaledSp,
+                ),
                 modifier = Modifier
             )
-            Text(
+            AutoResizedText(
                 text = "Kota Semarang",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
                 color = secondary,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                    fontSize = 12.nonScaledSp,
+                ),
                 modifier = Modifier
             )
         }
@@ -129,22 +140,27 @@ private fun HeaderSection(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     Row(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
             .padding(start = 10.dp, end = 10.dp),
     ) {
         Column(modifier = Modifier) {
-            Text(
+            AutoResizedText(
                 text = "Hello",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
                 color = secondary,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                    fontSize = 12.nonScaledSp,
+                ),
                 modifier = Modifier
             )
-            Text(
+            AutoResizedText(
                 text = "Admin",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
-                fontSize = 30.sp,
                 color = secondary,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
+                    fontSize = 26.nonScaledSp,
+                ),
                 modifier = Modifier
             )
 
@@ -185,23 +201,25 @@ private fun HeaderSection(
                     },
                     text = {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            Text(
+                            AutoResizedText(
                                 text = "Log Out",
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                fontSize = 24.sp,
                                 color = primary,
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
+                                style = TextStyle(
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontSize = 20.nonScaledSp,
+                                ),
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
 
-                            Text(
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AutoResizedText(
                                 text = "Are you sure you want to log out?",
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                fontSize = 16.sp,
                                 color = white2,
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
+                                style = TextStyle(
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontSize = 12.nonScaledSp,
+                                ),
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
                             )
                         }
                     },
@@ -217,12 +235,16 @@ private fun HeaderSection(
                             colors = ButtonDefaults.buttonColors(primary),
                             shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text(
+                            AutoResizedText(
                                 text = "No, continue to app",
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                fontSize = 20.sp,
                                 color = white,
+                                style = TextStyle(
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontSize = 16.nonScaledSp,
+                                ),
+                                modifier = Modifier
                             )
+
                         }
                     },
                     confirmButton = {
@@ -240,11 +262,14 @@ private fun HeaderSection(
                             colors = ButtonDefaults.buttonColors(Color.Transparent),
                             shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text(
+                            AutoResizedText(
                                 text = "Yes, log me out",
-                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                fontSize = 20.sp,
                                 color = white,
+                                style = TextStyle(
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontSize = 16.nonScaledSp,
+                                ),
+                                modifier = Modifier
                             )
                         }
 
@@ -264,45 +289,50 @@ private fun ContentSection(
     menu2:()-> Unit,
     menu3:()-> Unit,
     modifier: Modifier = Modifier) {
-    Column(
-        modifier = Modifier
-            .height(400.dp)
-            .padding(start = 10.dp, end = 10.dp)
-    ) {
-        Row(
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(2f),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .height(400.dp)
+                .padding(start = 10.dp, end = 10.dp)
         ) {
-            DashboardItem(
-                title = "Control",
-                title2 = "Ruang",
-                backgroundImage = R.drawable.ic_menu_control,
-                onClick = {menu1()},
-                modifier = Modifier.weight(1.1f).height(400.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                DashboardItem2(
-                    title = "Daftar",
-                    title2 = "Ruang Terbooking",
-                    backgroundImage = R.drawable.ic_menu_booking,
-                    onClick = {menu2()},
-                    modifier = Modifier.height(250.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(2f),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                DashboardItem(
+                    title = "Control",
+                    title2 = "Ruang",
+                    backgroundImage = R.drawable.ic_menu_control,
+                    onClick = {menu1()},
+                    modifier = Modifier
+                        .weight(1.1f)
+                        .height(400.dp)
                 )
-                DashboardItem3(
-                    title = "Riwayat",
-                    title2 = "Transaksi",
-                    backgroundImage = R.drawable.ic_menu_riwayat,
-                    onClick = {menu3()},
-                    modifier = Modifier.height(150.dp)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    DashboardItem2(
+                        title = "Daftar",
+                        title2 = "Ruang Terbooking",
+                        backgroundImage = R.drawable.ic_menu_booking,
+                        onClick = {menu2()},
+                        modifier = Modifier.height(250.dp)
+                    )
+                    DashboardItem3(
+                        title = "Riwayat",
+                        title2 = "Transaksi",
+                        backgroundImage = R.drawable.ic_menu_riwayat,
+                        onClick = {menu3()},
+                        modifier = Modifier.height(150.dp)
+                    )
+                }
+
             }
 
+
         }
-
-
     }
+
 }
 
 @Composable
@@ -331,22 +361,28 @@ fun DashboardItem(
             modifier = Modifier.align(Alignment.BottomCenter)
 
         )
-        Column(modifier = Modifier.align(Alignment.TopStart)
+        Column(modifier = Modifier
+            .align(Alignment.TopStart)
             .padding(16.dp)) {
-            Text(
-                  text = title,
-                  fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                  fontSize = 16.sp,
-                  color = white,
-                  modifier = Modifier
-              )
-            Text(
-                  text = title2,
-                  fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                  fontSize = 30.sp,
-                  color = white,
-                  modifier = Modifier
-              )
+            AutoResizedText(
+                text = title,
+                color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 12.nonScaledSp,
+                ),
+                modifier = Modifier
+            )
+            AutoResizedText(
+                text = title2,
+                color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 26.nonScaledSp,
+                ),
+                modifier = Modifier
+            )
+
 
         }
 
@@ -378,23 +414,28 @@ fun DashboardItem2(
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(-15.dp,40.dp)
+                .offset(-15.dp, 40.dp)
 
         )
-        Column(modifier = Modifier.align(Alignment.TopStart)
+        Column(modifier = Modifier
+            .align(Alignment.TopStart)
             .padding(16.dp)) {
-            Text(
+            AutoResizedText(
                 text = title,
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 16.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 12.nonScaledSp,
+                ),
                 modifier = Modifier
             )
-            Text(
+            AutoResizedText(
                 text = title2,
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 30.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 26.nonScaledSp,
+                ),
                 modifier = Modifier
             )
 
@@ -435,20 +476,25 @@ fun DashboardItem3(
                 .align(Alignment.CenterEnd)
 
         )
-        Column(modifier = Modifier.align(Alignment.TopStart)
+        Column(modifier = Modifier
+            .align(Alignment.TopStart)
             .padding(16.dp)) {
-            Text(
+            AutoResizedText(
                 text = title,
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 16.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 12.nonScaledSp,
+                ),
                 modifier = Modifier
             )
-            Text(
+            AutoResizedText(
                 text = title2,
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 30.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 26.nonScaledSp,
+                ),
                 modifier = Modifier
             )
 

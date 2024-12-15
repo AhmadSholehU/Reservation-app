@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,7 +59,12 @@ import com.overdevx.reservationapp.ui.theme.white2
 import com.overdevx.reservationapp.utils.Resource
 
 @Composable
-fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit, navController: NavController, modifier: Modifier = Modifier) {
+fun LoginScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLoginClick: () -> Unit,
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -69,25 +75,13 @@ fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit
     var passwordVisible by remember { mutableStateOf(false) }
 
     // Handle back press to exit app
-    BackHandler {
-        // Menutup aplikasi jika berada di layar login dan menekan tombol back
-        (navController.context as? Activity)?.finish()
-    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 16.dp, start = 16.dp, end = 16.dp)
     ) {
-        Text(
-            text = "Sign in \nto continue",
-            color = secondary,
-            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-            fontSize = 45.sp,
-            lineHeight = 55.sp,
-            modifier = Modifier,
-            )
-        Spacer(modifier = Modifier.height(50.dp))
-
+        Spacer(modifier = Modifier.height(30.dp))
         Image(
             painter = painterResource(id = R.drawable.img_smg),
             contentDescription = null,
@@ -97,10 +91,20 @@ fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Login",
+            text = "ASRAMA BALAI DIKLAT",
             color = secondary,
             fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-            fontSize = 24.sp,
+            fontSize = 25.sp,
+            textAlign = TextAlign.Center,
+            letterSpacing = 3.sp,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally),
+        )
+        Text(
+            text = "Kota Semarang",
+            color = secondary,
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 20.sp,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally),
 
@@ -151,12 +155,13 @@ fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit
                     ) {
                         if (email.isEmpty()) {
                             Text(
-                                text = "Email",
+                                text = "Masukan Email Anda",
                                 style = TextStyle(
                                     fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
                                     fontSize = 14.sp,
                                     color = white2
-                                )
+                                ),
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                         innerTextField() // Tampilkan BasicTextField
@@ -206,43 +211,46 @@ fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit
                 ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 decorationBox = { innerTextField ->
-                    Box(
-                        modifier = Modifier
-
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (password.isEmpty()) {
-                            Text(
-                                text = "Password",
-                                style = TextStyle(
-                                    fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
-                                    fontSize = 14.sp,
-                                    color = white2
+                        Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                            if (password.isEmpty()) {
+                                Text(
+                                    text = "Masukan Kata Sandi",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily(listOf(Font(R.font.inter_regular))),
+                                        fontSize = 14.sp,
+                                        color = white2
+                                    ),
+                                    modifier = Modifier
                                 )
+                            }
+                            innerTextField()
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(
+                            onClick = {
+                                passwordVisible = !passwordVisible
+                            },
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .size(40.dp),
+                            colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    id = if (passwordVisible) R.drawable.ic_eye else R.drawable.ic_eye_slash
+                                ),
+                                contentDescription = null,
+                                tint = white
                             )
                         }
-                        innerTextField() // Tampilkan BasicTextField
+                        Spacer(modifier = Modifier.width(10.dp))
                     }
                 }
             )
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(
-                onClick = {
-                    passwordVisible = !passwordVisible
-                },
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .size(40.dp),
-                colors = IconButtonDefaults.iconButtonColors(Color.Transparent)
-            ) {
-                Icon(
-                    painter = painterResource(
-                        id = if (passwordVisible) R.drawable.ic_eye else R.drawable.ic_eye_slash
-                    ),
-                    contentDescription = null,
-                    tint = white
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
+
         }
         Spacer(modifier = Modifier.height(20.dp))
         Button(
@@ -266,36 +274,15 @@ fun LoginScreen(viewModel: AuthViewModel= hiltViewModel(), onLoginClick:()->Unit
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(modifier = Modifier) {
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "Not have an account ?",
-                color = secondary,
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
-                lineHeight = 55.sp,
-                modifier = Modifier,
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(
-                text = "Register",
-                color = primary,
-                fontFamily = FontFamily(listOf(Font(R.font.inter_bold))),
-                fontSize = 16.sp,
-                lineHeight = 55.sp,
-                modifier = Modifier
-                    .clickable { },
-            )
-            Spacer(modifier = Modifier.weight(1f))
-        }
 
-        if(showDialog){
+
+        if (showDialog) {
             AlertDialog(
                 onDismissRequest = {
 
                 }, // Menutup dialog saat di luar dialog ditekan
                 title = {
-                    Column (modifier = Modifier.fillMaxWidth()){
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_success),
                             contentDescription = null,

@@ -138,6 +138,10 @@ dependencies {
     implementation ("androidx.paging:paging-compose:1.0.0-alpha18")
     implementation ("androidx.core:core-splashscreen:1.0.1")
 
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.foundation)
+
+    implementation ("androidx.compose.material:material:1.7.5")
 
 
 

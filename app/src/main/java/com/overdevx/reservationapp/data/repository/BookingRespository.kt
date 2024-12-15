@@ -5,14 +5,18 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.overdevx.reservationapp.data.model.BookingList
+import com.overdevx.reservationapp.data.model.BookingListResponse
+import com.overdevx.reservationapp.data.model.BookingListinitResponse
 import com.overdevx.reservationapp.data.model.BookingRequest
 import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoom
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
+import com.overdevx.reservationapp.data.model.BookingRoominit
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.UpdateBookingRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
+import com.overdevx.reservationapp.data.paging.BookingListPagingSource
 import com.overdevx.reservationapp.data.paging.BookingRoomPagingSource
 import com.overdevx.reservationapp.data.remote.ApiService
 import com.overdevx.reservationapp.data.remote.ApiService2
@@ -23,7 +27,7 @@ import javax.inject.Inject
 class BookingRespository @Inject constructor(
    private val authenticateApiService: ApiService
 ) {
-    suspend fun booking(room_id:Int, startDate:String,enddate:String): Resource<BookingResponse> {
+    suspend fun booking(room_id:List<Int>, startDate:String,enddate:String): Resource<BookingResponse> {
         return try{
             val response = authenticateApiService.booking(BookingRequest(room_id, startDate,enddate))
             if (response.isSuccessful) {
@@ -66,6 +70,29 @@ class BookingRespository @Inject constructor(
         return try {
             // Make the API call
             val response = authenticateApiService.getBookingRoom(roomId)
+
+            // Check the API response status
+            if (response.status == "success") {
+                // Return the data if available
+                val body = response.data
+                if (body != null) {
+                    Resource.Success(response)  // Return the single BookingRoomResponse
+                } else {
+                    Resource.ErrorMessage("Fetching booking room failed: No response body")
+                }
+            } else {
+                Resource.ErrorMessage("Fetching booking room failed: ${response.message}")
+            }
+        } catch (e: Exception) {
+            // Handle any exceptions
+            Resource.Error(e)
+        }
+    }
+
+    suspend fun getBookingRoombyId(roomId: Int): Resource<BookingListResponse> {
+        return try {
+            // Make the API call
+            val response = authenticateApiService.getBookingRoomsbyId(roomId)
 
             // Check the API response status
             if (response.status == "success") {
@@ -128,18 +155,14 @@ class BookingRespository @Inject constructor(
         }
     }
 
-    suspend fun getBookingList(): Resource<List<BookingList>> {
-        return try {
-            val response = authenticateApiService.getBookinglist()
-            if (response.status == "success") {
-                Resource.Success(response.data)
-            } else {
-                Resource.ErrorMessage(response.message)
-            }
-        } catch (e: Exception) {
-            Log.e("RetrofitError", "Error: ${e.message}")
-            Resource.Error(e)
-        }
+    fun getBookingList(): Pager<Int,BookingRoominit> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 4, // Jumlah item per halaman
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { BookingListPagingSource(authenticateApiService) }
+        )
     }
 
     fun getBookingRooms(): Pager<Int,BookingList> {

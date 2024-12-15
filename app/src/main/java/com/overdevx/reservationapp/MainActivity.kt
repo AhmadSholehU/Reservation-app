@@ -71,10 +71,15 @@ import javax.inject.Inject
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.overdevx.reservationapp.data.presentation.SplashScreen
+import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreen
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreenDetail
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.HomeControlScreen
 
 @AndroidEntryPoint
@@ -99,6 +104,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalSharedTransitionApi::class)
     @Composable
     fun ReserApp(modifier: Modifier = Modifier) {
         val navController = rememberNavController()
@@ -116,237 +122,260 @@ class MainActivity : ComponentActivity() {
             // Cek apakah token sudah ada
             val token = tokenProvider.getToken()
             val startDestination = HomeRoute
-            NavHost(
-                modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
-                navController = navController,
-                startDestination = startDestination,
-                enterTransition = { slideInHorizontally { it } },
-                exitTransition = { slideOutHorizontally { -it } },
-                popEnterTransition = { slideInHorizontally { -it } },
-                popExitTransition = { slideOutHorizontally { it } }
-            ) {
-                composable<LoginRoute> {
-                    LoginScreen(
-                        onLoginClick = {
-                            navController.navigate(HomeRoute) {
-                                popUpTo(LoginRoute) { inclusive = true }
-                            }
-                        },
-                        navController = navController,
-                        modifier = Modifier
-                            .padding(bottom = innerPadding.calculateBottomPadding())
-                    )
-                    showBottomBar = false
-                }
-                composable<HomeRoute> {
-                    HomeUserScreen(onClick = { id, deskripsi, roomName, harga, jumlahKamar, rating, foto ->
-                        navController.navigate(
-                            DetailHomeUserRoute(
-                                id,
-                                deskripsi,
-                                roomName,
-                                harga,
-                                jumlahKamar,
-                                rating,
-                                foto
-                            )
-                        )
-
-                    }, modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()))
-                }
-                composable<ControlRoute> {
-                    HomeScreen(
-                        modifier = Modifier.padding(
-                            bottom = innerPadding.calculateBottomPadding()
-                        ),
-                        onClick = { buildingId, buildingName ->
-                            if (buildingId == 3) {
-                                navController.navigate(
-                                    RoomsRouteAdminC(
-                                        id = buildingId,
-                                        name = buildingName
-                                    )
-                                )
-                            } else {
-                                navController.navigate(
-                                    RoomsRouteAdmin(
-                                        id = buildingId,
-                                        name = buildingName
-                                    )
-                                )
-                            }
-                        },
-                        onNavigateBack = {
-                            navController.navigateUp()
-                        }
-                    )
-                }
-                composable<HomeControlRoute> {
-                    val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
-                    if (token2.isNullOrEmpty()) {
-                        Access(
+            SharedTransitionLayout {
+                NavHost(
+                    modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
+                    navController = navController,
+                    startDestination = startDestination,
+                    enterTransition = { slideInHorizontally { it } },
+                    exitTransition = { slideOutHorizontally { -it } },
+                    popEnterTransition = { slideInHorizontally { -it } },
+                    popExitTransition = { slideOutHorizontally { it } }
+                ) {
+                    composable<LoginRoute> {
+                        LoginScreen(
                             onLoginClick = {
-                                navController.navigate(LoginRoute)
+                                navController.navigate(HomeRoute) {
+                                    popUpTo(LoginRoute) { inclusive = true }
+                                }
                             },
+                            navController = navController,
+                            modifier = Modifier
+                                .padding(bottom = innerPadding.calculateBottomPadding())
+                        )
+                        showBottomBar = false
+                    }
+                    composable<HomeRoute> {
+                        HomeUserScreen(
+                            onClick = { id, deskripsi, roomName, harga, jumlahKamar, rating, foto ->
+                                navController.navigate(
+                                    DetailHomeUserRoute(
+                                        id,
+                                        deskripsi,
+                                        roomName,
+                                        harga,
+                                        jumlahKamar,
+                                        rating,
+                                        foto
+                                    )
+                                )
+
+                            },
+                            navController = navController,
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout,
                             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
                         )
-
-                    } else {
-                        HomeControlScreen(
+                        showBottomBar=true
+                    }
+                    composable<ControlRoute> {
+                        HomeScreen(
                             modifier = Modifier.padding(
                                 bottom = innerPadding.calculateBottomPadding()
                             ),
-                            onLogoutClick = {
-                                navController.navigate(MonitoringRoute) {
-                                    popUpTo<HomeRoute> { inclusive = true }
+                            onClick = { buildingId, buildingName ->
+                                if (buildingId == 3) {
+                                    navController.navigate(
+                                        RoomsRouteAdminC(
+                                            id = buildingId,
+                                            name = buildingName
+                                        )
+                                    )
+                                } else {
+                                    navController.navigate(
+                                        RoomsRouteAdmin(
+                                            id = buildingId,
+                                            name = buildingName
+                                        )
+                                    )
                                 }
                             },
-                            onMenu1Click = {
-                                navController.navigate(ControlRoute)
-                            },
-                            onMenu2Click = {
-                                navController.navigate(BookingListRoute)
-                            },
-                            onMenu3Click = {
-                                navController.navigate(HistoryRoute)
+                            onNavigateBack = {
+                                navController.navigateUp()
                             }
                         )
-
                     }
-                    showBottomBar = true
-                }
-                composable<MonitoringRoute> {
-                    MonitoringScreen2(
-                        modifier = Modifier.padding(
-                            bottom = innerPadding.calculateBottomPadding(),
-                            top = 16.dp
-                        ),
-                        onClick = { buildingId ->
-                            navController.navigate(RoomsRouteUser(id = buildingId))
-                        },
-                    )
+                    composable<HomeControlRoute> {
+                        val token2 by remember { mutableStateOf(tokenProvider.getToken()) }
+                        if (token2.isNullOrEmpty()) {
+                            Access(
+                                onLoginClick = {
+                                    navController.navigate(LoginRoute)
+                                },
+                                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                            )
 
-                    showBottomBar = true
-                }
+                        } else {
+                            HomeControlScreen(
+                                modifier = Modifier.padding(
+                                    bottom = innerPadding.calculateBottomPadding()
+                                ),
+                                onLogoutClick = {
+                                    navController.navigate(MonitoringRoute) {
+                                        popUpTo<HomeRoute> { inclusive = true }
+                                    }
+                                },
+                                onMenu1Click = {
+                                    navController.navigate(ControlRoute)
+                                },
+                                onMenu2Click = {
+                                    navController.navigate(BookingListRoute)
+                                },
+                                onMenu3Click = {
+                                    navController.navigate(HistoryRoute)
+                                }
+                            )
 
-                composable<RoomsRouteUser> {
-                    val args = it.toRoute<RoomsRouteUser>()
-                    val buildingId = args.id
-                    RoomsScreen(
-                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-                        buildingId,
-                        onNavigateBack = {
-                            navController.navigateUp()
-                        },
-                    )
-                }
-                composable<RoomsRouteAdmin> {
-                    val args = it.toRoute<RoomsRouteAdmin>()
-                    val buildingId = args.id
-                    val buildingName = args.name
-                    AdminRoomScreen(
-                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-                        buildingId,
-                        buildingName,
-                        onNavigateBack = {
-                            navController.navigateUp()
                         }
-                    )
-                }
+                        showBottomBar = true
+                    }
+                    composable<MonitoringRoute> {
+                        MonitoringScreen2(
+                            modifier = Modifier.padding(
+                                bottom = innerPadding.calculateBottomPadding(),
+                                top = 16.dp
+                            ),
+                            onClick = { buildingId ->
+                                navController.navigate(RoomsRouteUser(id = buildingId))
+                            },
+                        )
 
-                composable<RoomsRouteAdminC>
-                {
-                    val args = it.toRoute<RoomsRouteAdminC>()
-                    val buildingId = args.id
-                    val buildingName = args.name
-                    AdminRoomScreenC(
-                        modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-                        buildingId,
-                        buildingName,
-                        onNavigateBack = {
-                            navController.navigateUp()
-                        }
-                    )
-                }
+                        showBottomBar = true
+                    }
 
-                composable<HistoryRoute> {
-                    HistoryScreen(
-                        modifier = Modifier
-                            .padding(bottom = innerPadding.calculateBottomPadding())
-                    )
-                    showBottomBar = true
-                }
+                    composable<RoomsRouteUser> {
+                        val args = it.toRoute<RoomsRouteUser>()
+                        val buildingId = args.id
+                        RoomsScreen(
+                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                            buildingId,
+                            onNavigateBack = {
+                                navController.navigateUp()
+                            },
+                        )
+                    }
+                    composable<RoomsRouteAdmin> {
+                        val args = it.toRoute<RoomsRouteAdmin>()
+                        val buildingId = args.id
+                        val buildingName = args.name
+                        AdminRoomScreen(
+                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                            buildingId,
+                            buildingName,
+                            onNavigateBack = {
+                                navController.navigateUp()
+                            }
+                        )
+                    }
 
-                composable<DetailHomeUserRoute> {
-                    val args = it.toRoute<DetailHomeUserRoute>()
-                    val id = args.id
-                    val deskripsi = args.deskripsi
-                    val roomName = args.roomName
-                    val harga = args.harga
-                    val jumlahKamar = args.jumlah_kamar
-                    val rating = args.rating
-                    val foto = args.foto
-                    val context = LocalContext.current
-                    DetailHomeUserScreen(
-                        id,
-                        roomName,
-                        harga,
-                        rating,
-                        deskripsi,
-                        jumlahKamar,
-                        foto,
-                        onClick = {
-                            context.startActivity(
-                                // on below line we are opening the intent.
-                                Intent(
-                                    // on below line we are calling
-                                    // uri to parse the data
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse(
-                                        // on below line we are passing uri,
-                                        // message and whats app phone number.
-                                        java.lang.String.format(
-                                            "https://api.whatsapp.com/send?phone=%s&text=%s",
-                                            "+62 81227978072",
-                                            "yo wassap hooman"
+                    composable<RoomsRouteAdminC>
+                    {
+                        val args = it.toRoute<RoomsRouteAdminC>()
+                        val buildingId = args.id
+                        val buildingName = args.name
+                        AdminRoomScreenC(
+                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+                            buildingId,
+                            buildingName,
+                            onNavigateBack = {
+                                navController.navigateUp()
+                            }
+                        )
+                    }
+
+                    composable<HistoryRoute> {
+                        HistoryScreen(
+                            onNavigateBack = { navController.navigateUp() },
+                            modifier = Modifier
+                                .padding(bottom = innerPadding.calculateBottomPadding())
+                        )
+                        showBottomBar = true
+                    }
+
+                    composable<DetailHomeUserRoute> {
+                        val args = it.toRoute<DetailHomeUserRoute>()
+                        val id = args.id
+                        val deskripsi = args.deskripsi
+                        val roomName = args.roomName
+                        val harga = args.harga
+                        val jumlahKamar = args.jumlah_kamar
+                        val rating = args.rating
+                        val foto = args.foto
+                        val context = LocalContext.current
+                        DetailHomeUserScreen(
+                            id,
+                            roomName,
+                            harga,
+                            rating,
+                            deskripsi,
+                            jumlahKamar,
+                            foto,
+                            onClick = {
+                                context.startActivity(
+                                    // on below line we are opening the intent.
+                                    Intent(
+                                        // on below line we are calling
+                                        // uri to parse the data
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(
+                                            // on below line we are passing uri,
+                                            // message and whats app phone number.
+                                            java.lang.String.format(
+                                                "https://api.whatsapp.com/send?phone=%s&text=%s",
+                                                "+62 81227978072",
+                                                "yo wassap hooman"
+                                            )
                                         )
                                     )
                                 )
-                            )
-                        },
-                        onNavigateBack = { navController.navigateUp() },
-                        modifier = Modifier
-                            .padding(bottom = innerPadding.calculateBottomPadding())
-                    )
-                }
+                            },
+                            onNavigateBack = { navController.navigateUp() },
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            modifier = Modifier
+                                .padding(bottom = innerPadding.calculateBottomPadding())
+                        )
+                    }
 
-                composable<BookingListRoute> {
-                    BookingListScreen(
-                        modifier = Modifier
-                            .padding(bottom = innerPadding.calculateBottomPadding()),
-                        onNavigateBack = { navController.navigateUp() }
-                    )
-                }
-
-                composable<SplashScreenRoute> {
-                    SplashScreen(
-                        onSplashComplete = {
-                            val token = tokenProvider.getToken()
-                            if (token.isNullOrEmpty()) {
-                                navController.navigate(LoginRoute) {
-                                    popUpTo(SplashScreenRoute) { inclusive = true }
-                                }
-                            } else {
-                                navController.navigate(HomeRoute) {
-                                    popUpTo(SplashScreenRoute) { inclusive = true }
+                    composable<BookingListRoute> {
+                        BookingListScreen(
+                            modifier = Modifier
+                                .padding(bottom = innerPadding.calculateBottomPadding()),
+                            onNavigateBack = { navController.navigateUp() },
+                            onClick = { bookingId ->
+                                navController.navigate(DetailBookingListRoute(bookingId))
+                            }
+                        )
+                    }
+                    composable<DetailBookingListRoute> {
+                        val args = it.toRoute<DetailBookingListRoute>()
+                        val bookingId = args.bookingId
+                        BookingListScreenDetail(
+                            onNavigateBack = { navController.navigateUp() },
+                            bookingRoomId = bookingId
+                        )
+                    }
+                    composable<SplashScreenRoute> {
+                        SplashScreen(
+                            onSplashComplete = {
+                                val token = tokenProvider.getToken()
+                                if (token.isNullOrEmpty()) {
+                                    navController.navigate(LoginRoute) {
+                                        popUpTo(SplashScreenRoute) { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate(HomeRoute) {
+                                        popUpTo(SplashScreenRoute) { inclusive = true }
+                                    }
                                 }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     }
+
 
     @Composable
     fun AppBottomNavigation(navController: NavController) {
@@ -395,7 +424,7 @@ class MainActivity : ComponentActivity() {
                         Text(
                             text = screen.name,
                             fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                            fontSize = 14.sp,
+                            fontSize = 10.nonScaledSp,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) white else white2
@@ -459,6 +488,11 @@ data class DetailHomeUserRoute(
     val jumlah_kamar: Int,
     val rating: String,
     val foto: String
+)
+
+@Serializable
+data class DetailBookingListRoute(
+    val bookingId: Int
 )
 
 @Serializable

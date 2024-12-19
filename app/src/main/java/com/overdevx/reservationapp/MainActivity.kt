@@ -202,6 +202,9 @@ class MainActivity : ComponentActivity() {
                                 onLoginClick = {
                                     navController.navigate(LoginRoute)
                                 },
+                                onUserClick = {
+                                  navController.navigate(HomeRoute)
+                                },
                                 modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
                             )
 

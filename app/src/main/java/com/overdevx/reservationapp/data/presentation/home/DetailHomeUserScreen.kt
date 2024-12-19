@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.data.presentation.home
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -48,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -108,7 +110,7 @@ fun DetailHomeUserScreen(
     modifier: Modifier = Modifier
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var selectedRoomNumber by remember { mutableStateOf<String?>(null) }
+    var selectedRoomNumbers by remember { mutableStateOf(listOf<String>()) }
     var buildingId by remember { mutableStateOf(1) }
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -132,25 +134,18 @@ fun DetailHomeUserScreen(
                     foto,
                     animatedVisibilityScope,
                     sharedTransitionScope
-//                    selectedBuilding = {
-//                        if (it == "Gedung Asrama A") {
-//                            buildingId = 1
-//                            viewModel.fetchRooms(buildingId)
-//                        } else {
-//                            buildingId = 2
-//                            viewModel.fetchRooms(buildingId)
-//                        }
-//                    }
                 )
             }
             item {
 
                 Box(
                     modifier = Modifier
-                        .fillMaxSize() ,// Tambahkan padding jika diperlukan
+                        .fillMaxSize(),// Tambahkan padding jika diperlukan
                     contentAlignment = Alignment.BottomCenter // Posisikan tombol di bagian bawah
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                    Column(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)) {
                         Spacer(modifier = Modifier.weight(1f)) // Berikan ruang fleksibel
                         Text(
                             text = "$jumlahKamar Kamar Tersedia",
@@ -184,8 +179,7 @@ fun DetailHomeUserScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
-                                ,
+                                .height(50.dp),
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = primary,
@@ -208,49 +202,49 @@ fun DetailHomeUserScreen(
         if (showDialog) {
             //viewModel.fetchRooms(1)
             PesanDialog(
-                selectedRoomNumber = selectedRoomNumber,
+                selectedRoomNumbers = selectedRoomNumbers,
                 onDismiss = {
                     showDialog = false
                 },
-                onDialogAction = { roomNumber ->
-                    var buildingName = ""
-                    if (buildingId == 1) {
-                        buildingName = "Asrama A"
-                    } else {
-                        buildingName = "Asrama B"
-                    }
+                onDialogAction = { roomNumbers ->
+                    val buildingName = if (buildingId == 1) "Asrama A" else "Asrama B"
+                    val formattedHarga = formatCurrency(harga)
 
-                    val formatedHarga = formatCurrency(harga)
-                    // Aksi kirim data ke WhatsApp
-                    val message =
-                        "Saya ingin memesan kamar nomor $roomNumber di Gedung $buildingName dengan tarif Rp. $formatedHarga per malam. Apakah kamar tersebut masih tersedia untuk tanggal yang saya inginkan?"
+                    // Format daftar kamar dengan bullet point
+                    val roomList = roomNumbers.joinToString(separator = "\n") { "- $it" }
+                    val message = """
+    Saya ingin memesan kamar nomor:
+    $roomList
+    di Gedung $buildingName dengan tarif Rp. $formattedHarga per malam. Apakah kamar-kamar tersebut masih tersedia untuk tanggal yang saya inginkan?
+    """.trimIndent()
+
                     val intent = Intent(
                         Intent.ACTION_VIEW,
                         Uri.parse(
                             String.format(
                                 "https://api.whatsapp.com/send?phone=%s&text=%s",
                                 "+62 8987472054", // Ganti dengan nomor WhatsApp
-                                message
+                                Uri.encode(message)
                             )
                         )
                     )
                     context.startActivity(intent)
                 },
                 onBuildingSelected = { buildingName ->
-                    if (buildingName == "Gedung Asrama A") {
-                        buildingId = 1
-                        viewModel.fetchRooms(buildingId)
-                    } else {
-                        buildingId = 2
-                        viewModel.fetchRooms(buildingId)
-                    }
+                    buildingId = if (buildingName == "Gedung Asrama A") 1 else 2
+                    viewModel.fetchRooms(buildingId)
                 },
-                onRoomSelected = { selectedRoom, roomId, roomStatus ->
-                    selectedRoomNumber = selectedRoom
+                onRoomSelected = { roomNumber, roomId, roomStatus ->
+                    selectedRoomNumbers = if (selectedRoomNumbers.contains(roomNumber)) {
+                        selectedRoomNumbers - roomNumber // Hapus jika sudah dipilih
+                    } else {
+                        selectedRoomNumbers + roomNumber // Tambahkan jika belum dipilih
+                    }
                 },
                 showDialog = { false },
                 modifier = Modifier
             )
+
         }
     }
 }
@@ -311,7 +305,7 @@ private fun MainSection(
     val sharedPreferences = remember {
         context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     }
-    val imgUrl = sharedPreferences.getString("base_url","192.168.123.155")
+    val imgUrl = sharedPreferences.getString("base_url", "192.168.123.155")
     val fotoList: List<String> = remember {
         Json.decodeFromString(foto)
     }
@@ -567,21 +561,25 @@ private fun FasilitasSection(id: Int, modifier: Modifier = Modifier) {
     }
 }
 
+@SuppressLint("RememberReturnType")
 @Composable
 private fun PesanDialog(
-    selectedRoomNumber: String?,
+    selectedRoomNumbers: List<String>,
     onDismiss: () -> Unit,
-    onDialogAction: (String) -> Unit,
+    onDialogAction: (List<String>) -> Unit,
     viewModel: RoomsViewModel = hiltViewModel(),
     onBuildingSelected: (String) -> Unit,
-    onRoomSelected: (String?, Int?, String?) -> Unit,
+    onRoomSelected: (String, Boolean, Any) -> Unit,
     showDialog: (Boolean) -> Unit,
     modifier: Modifier
 ) {
     // State untuk menyimpan status dan waktu penyewaan yang dipilih
     var selectedStatus by remember { mutableStateOf("Gedung Asrama A") }
-    var selectedRoom by remember { mutableStateOf("") }
     val roomState by viewModel.roomState.collectAsStateWithLifecycle()
+
+    // Daftar kamar yang dipilih
+    val selectedRooms = remember { mutableStateListOf<String>() }
+
     AlertDialog(
         onDismissRequest = {
             onDismiss()
@@ -612,6 +610,7 @@ private fun PesanDialog(
                             text = status,
                             isSelected = selectedStatus == status,
                             onClick = {
+                                selectedRooms.clear()
                                 selectedStatus = status
                                 onBuildingSelected(status)
                             }
@@ -622,11 +621,9 @@ private fun PesanDialog(
                 when (roomState) {
                     is Resource.Loading -> {
                         LoadingShimmerEffectPesanDialog()
-                        //RoomSkeletonGrid()
                     }
 
                     is Resource.Success -> {
-                        val scrollState = rememberScrollState()
                         val rooms = (roomState as Resource.Success<List<Room>>).data
                         if (rooms != null) {
                             if (rooms.isEmpty()) {
@@ -674,35 +671,41 @@ private fun PesanDialog(
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .heightIn(max = 500.dp) // Atur ketinggian maksimal grid
+                                                    .heightIn(max = 500.dp)
                                             ) {
                                                 LazyVerticalGrid(
                                                     columns = GridCells.Fixed(4),
                                                     modifier = Modifier.fillMaxWidth()
-
                                                 ) {
                                                     items(rooms, key = { it.room_id }) { room ->
                                                         RoomItem(
                                                             modifier = Modifier.padding(5.dp),
                                                             room = room,
-                                                            isSelected = selectedRoomNumber == room.room_number,
+                                                            isSelected = selectedRooms.contains(room.room_number),
                                                             onClick = {
-                                                                selectedRoom = room.room_number
-                                                                onRoomSelected(
-                                                                    if (selectedRoomNumber == room.room_number) null else room.room_number,
-                                                                    room.room_id,
-                                                                    room.status_name
-                                                                )
+                                                                if (selectedRooms.contains(room.room_number)) {
+                                                                    selectedRooms.remove(room.room_number)
+                                                                    onRoomSelected(
+                                                                        room.room_number,
+                                                                        false,
+                                                                        0
+                                                                    )
+                                                                } else {
+                                                                    selectedRooms.add(room.room_number)
+                                                                    onRoomSelected(
+                                                                        room.room_number,
+                                                                        true,
+                                                                        0
+                                                                    )
+                                                                }
                                                             }
                                                         )
                                                     }
-
                                                 }
                                             }
                                         }
                                     }
                                 }
-
                             }
                         }
                     }
@@ -710,11 +713,10 @@ private fun PesanDialog(
                     is Resource.ErrorMessage -> {
                         val errorMessage = (roomState as Resource.ErrorMessage).message
                         Text(text = "Error: $errorMessage")
-                        Log.e("HomeScreen", "Error: $errorMessage")
+                        Log.e("PesanDialog", "Error: $errorMessage")
                     }
 
                     is Resource.Error -> {
-                        // Handle error dari Exception
                         val exceptionMessage =
                             (roomState as Resource.Error).exception.message
                                 ?: "Unknown error occurred"
@@ -726,13 +728,12 @@ private fun PesanDialog(
             }
         },
         confirmButton = {
-            if (selectedRoomNumber != null) {
+            if (selectedRooms.isNotEmpty()) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     AutoResizedText(
-                        text = "Kamar $selectedRoom terpilih",
+                        text = "Kamar terpilih: ${selectedRooms.joinToString(", ")}",
                         color = secondary,
                         style = TextStyle(
                             fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
@@ -745,7 +746,7 @@ private fun PesanDialog(
 
                     Button(
                         onClick = {
-                            onDialogAction(selectedRoomNumber)
+                            onDialogAction(selectedRooms)
                             onDismiss()
                         },
                         shape = RoundedCornerShape(10.dp),
@@ -768,7 +769,6 @@ private fun PesanDialog(
                 }
             }
 
-
         },
         dismissButton = {
 
@@ -777,8 +777,6 @@ private fun PesanDialog(
         shape = RoundedCornerShape(10.dp),
 
         )
-
-
 }
 
 @Composable
@@ -814,7 +812,11 @@ private fun RoomItem(
         modifier = modifier
             .size(50.dp)
             .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .then(
+                if (!isSelected) {
+                    Modifier.border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                } else Modifier // Tidak ada border jika dipilih
+            )
             .background(backgroundColor)
             .then(
                 if (isClickable) Modifier.clickable { onClick() }
@@ -864,7 +866,7 @@ private fun AsramaButton(text: String, isSelected: Boolean, onClick: () -> Unit)
     ) {
         AutoResizedText(
             text = text,
-            color = if(isSelected) white else secondary,
+            color = if (isSelected) white else secondary,
             style = TextStyle(
                 fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                 fontSize = 14.nonScaledSp,

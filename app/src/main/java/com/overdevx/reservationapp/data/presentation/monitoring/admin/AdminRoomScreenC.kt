@@ -129,48 +129,53 @@ fun AdminRoomScreenC(
         }
 
         if (showDialog && selectedRoomNumber != null) {
-//            StatusDialog(
-//                selectedRoomNumber = selectedRoomNumber,
-//                onDismiss = { showDialog = false },
-//                buildingName = buildingName,
-//                onBooking = {
-//                    selectedRoomNumber?.let {
-//                        var statusId = when(room_status){
-//                            "Tersedia" -> 1
-//                            "Tidak Tersedia" -> 2
-//                            "Terbooking" -> 3
-//                            else -> 1
-//                        }
-//                        // Differentiate between update and create booking based on initial and selected statuses
-//                        if (current_room_status == "booked" && room_status == "Terbooking") {
-//                            // Use update booking endpoint if already booked
-//
-//                        } else if (current_room_status != "booked" && room_status == "Terbooking") {
-//                            // Use create booking endpoint if status changes to booked
-//                            //viewModelBooking.bookRoom(room_id, startDate, endDate)
-//                        } else {
-//                            // Just update room status if not booking
-//                            viewModelBooking.updateRoomStatus(room_id, statusId)
-//                        }
-//                    }
-//                },
-//                onStatusSelected = { status ->
-//                    room_status = status  // Update selected status di parent
-//                },
-//                onDateSelected = { date ->
-//                    selected_date = date  // Update selected date di parent
-//                },
-//                onDaysChange = { days ->
-//                    days_change = days.toInt()
-//                },
-//                unselectableDates = unselectableDates,
-//                onDateRangeSelected = { Sd, Ed ->
-//                   startDate = Sd
-//                    endDate = Ed
-//                    Log.d("startDate",startDate)
-//                },
-//                modifier = modifier
-//            )
+            val roomIds: MutableList<Int> = mutableListOf()
+            roomIds.add(room_id)
+
+            val selectedRoomNumbers : MutableList<String> = mutableListOf()
+            selectedRoomNumbers.add(selectedRoomNumber!!)
+            StatusDialog(
+                selectedRoomNumbers = selectedRoomNumbers,
+                onDismiss = { showDialog = false },
+                buildingName = buildingName,
+                onBooking = {
+                    selectedRoomNumber?.let {
+                        var statusId = when(room_status){
+                            "Tersedia" -> 1
+                            "Tidak Tersedia" -> 2
+                            "Terbooking" -> 3
+                            else -> 1
+                        }
+                        // Differentiate between update and create booking based on initial and selected statuses
+                        if (current_room_status == "booked" && room_status == "Terbooking") {
+                            // Use update booking endpoint if already booked
+
+                        } else if (current_room_status != "booked" && room_status == "Terbooking") {
+                            // Use create booking endpoint if status changes to booked
+                            viewModelBooking.bookRoom(roomIds, startDate, endDate)
+                        } else {
+                            // Just update room status if not booking
+                            viewModelBooking.updateRoomStatus(roomIds, statusId)
+                        }
+                    }
+                },
+                onStatusSelected = { status ->
+                    room_status = status  // Update selected status di parent
+                },
+                onDateSelected = { date ->
+                    selected_date = date  // Update selected date di parent
+                },
+                onDaysChange = { days ->
+                    days_change = days.toInt()
+                },
+                unselectableDates = unselectableDates,
+                onDateRangeSelected = { Sd, Ed ->
+                   startDate = Sd
+                    endDate = Ed
+                    Log.d("startDate",startDate)
+                },
+                modifier = modifier
+            )
         }
 
         when (bookingState) {
@@ -225,7 +230,7 @@ fun AdminRoomScreenC(
 
         when (bookingRoomState) {
             is Resource.Loading -> {
-               //LoadingShimmerEffect()
+                //LoadingShimmerEffect()
             }
             is Resource.Success -> {
                 // Handle successful booking room data
@@ -403,7 +408,7 @@ private fun RoomSection(
                             Color(0xFF25BF8E), // Kuning Muda
                             Color(0xFF29CE00), // Hijau Muda
                             Color(0xFF2C9779), // Merah Muda
-                             // Ungu Muda
+                            // Ungu Muda
                         )
                         val imageResources = listOf(
                             R.drawable.ic_flip_chart, // Gambar pertama
@@ -513,88 +518,88 @@ private fun RoomAdminItemC(
     imageResId: Int,
     onClick: () -> Unit
 ) {
-   var shapeColor = when (room.status_name) {
+    var shapeColor = when (room.status_name) {
         "available"-> green
-       "booked"-> primary
-       "not_available"-> gray
+        "booked"-> primary
+        "not_available"-> gray
         else -> gray
     }
-        Box(modifier = modifier
-            .fillMaxWidth()
-            .size(height = Dp.Unspecified, width = Dp.Unspecified)
-            .clip(RoundedCornerShape(10.dp))
-            .background(backgroundColor)
-            .clickable { onClick() }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_wave),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
-                alignment = Alignment.BottomEnd
-            )
-            Row(modifier = Modifier .padding(20.dp)) {
-                Column(modifier = Modifier
-                    .align(Alignment.CenterVertically)) {
-                    Text(
-                        text = room.room_number,
-                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                        fontSize = 20.sp,
-                        color = white,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier
-                    )
+    Box(modifier = modifier
+        .fillMaxWidth()
+        .size(height = Dp.Unspecified, width = Dp.Unspecified)
+        .clip(RoundedCornerShape(10.dp))
+        .background(backgroundColor)
+        .clickable { onClick() }
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.ic_wave),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+            alignment = Alignment.BottomEnd
+        )
+        Row(modifier = Modifier .padding(20.dp)) {
+            Column(modifier = Modifier
+                .align(Alignment.CenterVertically)) {
+                Text(
+                    text = room.room_number,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = white,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                )
 
+                Text(
+                    text = "Kapasitas Maksimal 100 Orang",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 14.sp,
+                    color = white.copy(0.5f),
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                )
+                Row (modifier = Modifier
+                    .background(white, RoundedCornerShape(8.dp))
+                    .padding(5.dp)){
                     Text(
-                        text = "Kapasitas Maksimal 100 Orang",
+                        text = "Status Ruang:",
                         fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                         fontSize = 14.sp,
-                        color = white.copy(0.5f),
-                        textAlign = TextAlign.Start,
+                        color = secondary,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier
                     )
-                    Row (modifier = Modifier
-                        .background(white, RoundedCornerShape(8.dp))
-                        .padding(5.dp)){
-                        Text(
-                            text = "Status Ruang:",
-                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                            fontSize = 14.sp,
-                            color = secondary,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Box(modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(shapeColor)
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Box(modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(shapeColor)
+                        .align(Alignment.CenterVertically))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = room.status_name,
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 14.sp,
+                        color = secondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
                             .align(Alignment.CenterVertically))
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = room.status_name,
-                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                            fontSize = 14.sp,
-                            color = secondary,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically))
 
 
-                    }
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                Image(
-                    painter = painterResource(id = imageResId),
-                    contentDescription = null,
-                    Modifier
-                        .size(90.dp)
-                        .align(Alignment.CenterVertically)
-                )
             }
-
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(id = imageResId),
+                contentDescription = null,
+                Modifier
+                    .size(90.dp)
+                    .align(Alignment.CenterVertically)
+            )
         }
+
     }
+}
 
 @Composable
 private fun RoomAdminItemC2(
@@ -748,62 +753,62 @@ private fun RoomAdminItemC2(
 
 @Composable
 private fun InfoSection(modifier: Modifier = Modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(primary)
-                    .align(Alignment.CenterVertically)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(
-                text = "Terbooking",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
-                color = secondary,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(primary)
+                .align(Alignment.CenterVertically)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(
+            text = "Terbooking",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 16.sp,
+            color = secondary,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
 
-            Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(green)
-                    .align(Alignment.CenterVertically)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(
-                text = "Tersedia",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
-                color = secondary,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(green)
+                .align(Alignment.CenterVertically)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(
+            text = "Tersedia",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 16.sp,
+            color = secondary,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
 
-            Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(gray)
-                    .align(Alignment.CenterVertically)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(
-                text = "Tidak Tersedia",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
-                color = secondary,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-        }
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(gray)
+                .align(Alignment.CenterVertically)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(
+            text = "Tidak Tersedia",
+            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+            fontSize = 16.sp,
+            color = secondary,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
+    }
 
 
 }

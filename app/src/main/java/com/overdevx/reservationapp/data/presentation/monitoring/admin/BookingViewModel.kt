@@ -1,5 +1,6 @@
 package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.cachedIn
@@ -62,11 +63,12 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    fun updateRoomStatus(roomId: Int, statusId: Int) {
+    fun updateRoomStatus(roomId:List<Int>, statusId: Int) {
         viewModelScope.launch {
             _updateRoomState.value = Resource.Loading
             val result = bookingRepository.updateRoomStatus(roomId, statusId)
             _updateRoomState.value = result
+            Log.d("updateRoomStatus", result.toString())
         }
     }
 

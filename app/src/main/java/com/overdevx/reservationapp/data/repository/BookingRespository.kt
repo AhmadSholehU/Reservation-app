@@ -13,6 +13,7 @@ import com.overdevx.reservationapp.data.model.BookingRoom
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.BookingRoominit
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
+import com.overdevx.reservationapp.data.model.RoomDataUpdate
 import com.overdevx.reservationapp.data.model.UpdateBookingRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
@@ -46,13 +47,13 @@ class BookingRespository @Inject constructor(
         }
     }
 
-    suspend fun updateRoomStatus(roomId: Int, statusId: Int): Resource<UpdateRoomsResponse> {
+    suspend fun updateRoomStatus(roomId:List<Int>, statusId: Int): Resource<UpdateRoomsResponse> {
         return try {
-            val request = UpdateRoomsRequest(status_id = statusId)
-            val response = authenticateApiService.updateRoom(roomId, request)
-
+            val request = UpdateRoomsRequest(roomIds=roomId,roomData = RoomDataUpdate(statusId))
+            val response = authenticateApiService.updateRoom(request)
             if (response.isSuccessful) {
                 val body = response.body()
+
                 if (body != null) {
                     Resource.Success(body)
                 } else {

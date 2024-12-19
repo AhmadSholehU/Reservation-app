@@ -2,7 +2,7 @@ package com.overdevx.reservationapp.data.model
 
 
 data class UpdateRoomsResponse(
-    val data: UpdateRooms,
+    val data: List<UpdateRooms>,
     val message: String,
     val status: String
 )
@@ -15,5 +15,10 @@ data class UpdateRooms (
 )
 
 data class UpdateRoomsRequest(
+    val roomIds: List<Int>,
+    val roomData: RoomDataUpdate
+)
+
+data class RoomDataUpdate(
     val status_id: Int
 )

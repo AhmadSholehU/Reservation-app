@@ -52,6 +52,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.overdevx.reservationapp.R
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingDialog
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
@@ -68,6 +70,7 @@ fun LoginScreen(
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
 
     val loginState by viewModel.loginState.collectAsStateWithLifecycle()
     var hasShownDialog by remember { mutableStateOf(false) }
@@ -342,17 +345,78 @@ fun LoginScreen(
             )
         }
 
+        if(showErrorDialog){
+            AlertDialog(
+                onDismissRequest = {
+
+                }, // Menutup dialog saat di luar dialog ditekan
+                title = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_circle_error),
+                            contentDescription = null,
+                            tint = primary,
+                            modifier = Modifier
+                                .size(55.dp)
+                                .align(Alignment.CenterHorizontally)
+                        )
+                    }
+
+                },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Failed",
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 24.sp,
+                            color = white,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Failed to login",
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 16.sp,
+                            color = white2,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showErrorDialog = false
+                        },
+                        modifier = Modifier
+                            .height(55.dp)
+                            .fillMaxWidth()
+                            .align(Alignment.End),
+                        colors = ButtonDefaults.buttonColors(primary),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = "Okay",
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                            fontSize = 20.sp,
+                            color = white,
+                        )
+                    }
+
+                },
+                containerColor = secondary
+            )
+        }
+
         when (loginState) {
             is Resource.Idle -> {
 
             }
 
             is Resource.Loading -> {
-                // Tampilkan indikator loading
-                CircularProgressIndicator(
-                    color = primary,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+              LoadingDialog {  }
             }
 
             is Resource.Success -> {
@@ -365,22 +429,86 @@ fun LoginScreen(
             }
 
             is Resource.Error -> {
-                // Tampilkan pesan error
                 Text(
                     text = "Login failed: ${(loginState as Resource.Error).exception.message}",
-                    color = Color.Red,
+                    color = Color.Blue,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
+
             }
 
             is Resource.ErrorMessage -> {
                 // Tampilkan pesan error dari Resource.ErrorMessage
-                Text(
-                    text = (loginState as Resource.ErrorMessage).message,
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                showErrorDialog=true
+                viewModel.resetLoginState()
             }
         }
     }
+}
+
+@Composable
+fun ErrorDialog(
+  modifier: Modifier = Modifier) {
+    var showDialog by remember { mutableStateOf(true) }
+    AlertDialog(
+        onDismissRequest = {
+
+        }, // Menutup dialog saat di luar dialog ditekan
+        title = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_success),
+                    contentDescription = null,
+                    tint = primary,
+                    modifier = Modifier
+                        .size(55.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Success",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 24.sp,
+                    color = white,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Your Login is successfully",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                    color = white2,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    showDialog = false
+                },
+                modifier = Modifier
+                    .height(55.dp)
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(primary),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "Okay",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = white,
+                )
+            }
+
+        },
+        containerColor = secondary
+    )
 }

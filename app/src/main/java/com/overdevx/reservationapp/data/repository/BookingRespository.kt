@@ -132,10 +132,51 @@ class BookingRespository @Inject constructor(
         }
     }
 
+    suspend fun deleteBookingRoom(bookingRoomId:Int):Resource<BookingRoomResponse>{
+        return try {
+            val response = authenticateApiService.deleteBooking(bookingRoomId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Resource.Success(body)
+                } else {
+                    Resource.ErrorMessage("Delete room failed: No response body")
+                }
+            } else {
+                Resource.ErrorMessage("Delete room failed: ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e)
+        }
+    }
+
     suspend fun getKetersediaan(roomId: Int): Resource<KetersediaanResponse> {
         return try {
             // Make the API call
             val response = authenticateApiService.getKetersediaan(roomId)
+
+            // Check the API response status
+            if (response.status == "success") {
+                // Return the data if available
+                val body = response.data
+                if (body != null) {
+                    Resource.Success(response)
+                } else {
+                    Resource.ErrorMessage("Fetching booking room failed: No response body")
+                }
+            } else {
+                Resource.ErrorMessage("Fetching booking room failed: ${response.message}")
+            }
+        } catch (e: Exception) {
+            // Handle any exceptions
+            Resource.Error(e)
+        }
+    }
+
+    suspend fun getKetersediaanBooking(roomId: Int): Resource<KetersediaanResponse> {
+        return try {
+            // Make the API call
+            val response = authenticateApiService.getKetersediaanBooking(roomId)
 
             // Check the API response status
             if (response.status == "success") {

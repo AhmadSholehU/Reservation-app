@@ -2,6 +2,7 @@ package com.overdevx.reservationapp.data.presentation.monitoring.admin
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -50,7 +52,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -107,6 +111,7 @@ fun BookingListScreen(
     val ketersediaanState by bookingViewModel.getKetersediaanState.collectAsStateWithLifecycle()
     val updateBookingState by bookingViewModel.updatatebookingState.collectAsStateWithLifecycle()
     var showDialog by remember { mutableStateOf(false) }
+
 
     var showSuccessDialog by remember { mutableStateOf(false) }
 
@@ -215,7 +220,7 @@ fun BookingListScreen(
                                     modifier = Modifier.padding(top = 10.dp)
                                 )
                             } else {
-                                BookingItemSmall(
+                                BookingItem(
                                     booking = it, onClick = {
                                         selectedBooking = it
                                         selectedStartDate = it.startDate
@@ -299,31 +304,6 @@ fun BookingListScreen(
 
 
             selectedBooking?.let { booking ->
-//                bookingViewModel.getKetersediaan(booking.room_id)
-//                if (showStatusDialog) {
-//                    StatusDialog(
-//                        onDismiss = { showStatusDialog = false },
-//                        bookingList = booking,
-//                        onBooking = {
-//                            bookingViewModel.updateBookingRoom(
-//                                booking.booking_room_id,
-//                                selectedStartDate!!, selectedEndDate!!
-//                            )
-//                        },
-//                        StartDate = selectedStartDate,
-//                        EndDate = selectedEndDate,
-//                        unselectableDates = unselectableDates,
-//                        onDateRangeSelected = { startDate, endDate ->
-//                            selectedStartDate = startDate
-//                            selectedEndDate = endDate
-//                        },
-//                        showDialog = { shouldShow ->
-//                            showDialog = shouldShow
-//                        },
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//                }
-
                 when (ketersediaanState) {
                     is Resource.Loading -> {
                         // Show loading indicator if necessary
@@ -654,18 +634,20 @@ private fun TopBarSection(
 fun RoomItem(room: BookingList) {
     Column(
         modifier = Modifier
-            .width(150.dp)
-            .padding(8.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.LightGray)
-            .padding(8.dp)
+
+            .clip(RoundedCornerShape(8.dp))
+            .background(secondary)
+            .padding(10.dp)
     ) {
-        Text(
+        AutoResizedText(
             text = room.Room.room_number,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = white,
+            style = TextStyle(
+                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                fontSize = 12.nonScaledSp,
+            ),
+            modifier = Modifier
         )
-        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
@@ -856,6 +838,145 @@ private fun BookingItemSmall(
 }
 
 @Composable
+private fun BookingItem(
+    booking: BookingRoominit,
+    onClick: () -> Unit,
+    onItemClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val startDate = convertDate(booking.startDate)
+    val endDate = convertDate(booking.endDate)
+    Spacer(modifier = Modifier.height(10.dp))
+        Box(
+            modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max)
+                .clip(RoundedCornerShape(10.dp))
+                .background(white)
+                .clickable { onItemClick() },
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(8.dp)
+                    .background(primary)
+
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = 12.dp)
+                    .width(220.dp)
+            ) {
+                AutoResizedText(
+                    text = "ID BOOKING : ${booking.bookingRoomId}",
+                    color = gray2,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 10.nonScaledSp,
+                    ),
+                    modifier = Modifier
+                        .padding(start = 18.dp)
+                )
+                AutoResizedText(
+                    text = "${booking.buildingName}",
+                    color = secondary,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 14.nonScaledSp,
+                    ),
+                    modifier = Modifier
+                        .padding(start = 18.dp)
+                )
+                AutoResizedText(
+                    text = "Transaksi Berhasil",
+                    color = green,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                        fontSize = 10.nonScaledSp,
+                    ),
+                    modifier = Modifier
+                        .padding(start = 18.dp)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                AutoResizedText(
+                    text = "Check In",
+                    color = gray,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                        fontSize = 10.nonScaledSp,
+                    ),
+                    modifier = Modifier
+                        .padding(start = 18.dp)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                if (startDate != null) {
+                    AutoResizedText(
+                        text = startDate,
+                        color = secondary,
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                            fontSize = 10.nonScaledSp,
+                        ),
+                        modifier = Modifier
+                            .padding(start = 18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                DashedLine()
+                Spacer(modifier = Modifier.height(10.dp))
+                AutoResizedText(
+                    text = "Check Out",
+                    color = gray,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                        fontSize = 10.nonScaledSp,
+                    ),
+                    modifier = Modifier
+                        .padding(start = 18.dp)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                if (endDate != null) {
+                    AutoResizedText(
+                        text = endDate,
+                        color = secondary,
+                        style = TextStyle(
+                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                            fontSize = 10.nonScaledSp,
+                        ),
+                        modifier = Modifier
+                            .padding(start = 18.dp)
+                    )
+                }
+
+
+            }
+            Row(modifier = Modifier.padding(12.dp).align(Alignment.BottomEnd)) {
+                IconButton(
+                    onClick = { onItemClick() },
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(primary)
+                        .size(30.dp)
+
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_next),
+                        contentDescription = null,
+                        tint = white
+                    )
+                }
+            }
+
+        }
+
+
+}
+
+
+
+@Composable
 private fun StatusDialog(
     onDismiss: () -> Unit,
     bookingList: BookingList,
@@ -1044,5 +1165,27 @@ private fun BookingDateColumn(label: String, date: String, color: Color) {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+@Composable
+fun DashedLine(
+    color: Color = Color.Gray,
+    strokeWidth: Float = 2f,
+    dashWidth: Float = 16f,
+    gapWidth: Float = 16f,
+    modifier: Modifier = Modifier
+        .fillMaxWidth()
+        .height(1.dp)
+) {
+    Canvas(modifier = modifier) {
+        val pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashWidth, gapWidth), 0f)
+        drawLine(
+            color = color,
+            start = Offset(0f, size.height / 2), // Mulai dari kiri
+            end = Offset(size.width, size.height / 2), // Sampai kanan
+            strokeWidth = strokeWidth,
+            pathEffect = pathEffect // Efek garis putus-putus
+        )
     }
 }

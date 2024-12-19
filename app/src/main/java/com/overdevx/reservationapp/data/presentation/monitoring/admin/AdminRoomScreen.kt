@@ -959,10 +959,11 @@ fun StatusDialog(
 fun SuccessDialog(
     onDismiss: () -> Unit,
     onClick: () -> Unit,
+    text: String = "Status Ruang Berhasil Diperbarui",
     modifier: Modifier = Modifier
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {onDismiss()},
         title = {
             Column(Modifier.fillMaxWidth()) {
                 Image(
@@ -978,8 +979,7 @@ fun SuccessDialog(
         text = {
             Column(Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Status Ruang \n" +
-                            "Berhasil Diperbarui",
+                    text = text,
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 20.sp,
                     color = secondary,
@@ -1020,6 +1020,7 @@ fun SuccessDialog(
         shape = RoundedCornerShape(10.dp)
     )
 }
+
 
 @Composable
 fun StatusButton(text: String, isSelected: Boolean, onClick: () -> Unit) {

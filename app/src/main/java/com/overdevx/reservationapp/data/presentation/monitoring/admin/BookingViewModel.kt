@@ -34,6 +34,9 @@ class BookingViewModel @Inject constructor(
     private val _updatatebookingState = MutableStateFlow<Resource<BookingRoomResponse>>(Resource.Idle)
     val updatatebookingState: StateFlow<Resource<BookingRoomResponse>> = _updatatebookingState
 
+    private val _deletebookingState = MutableStateFlow<Resource<BookingRoomResponse>>(Resource.Idle)
+    val deletebookingState: StateFlow<Resource<BookingRoomResponse>> = _deletebookingState
+
     private val _updateRoomState = MutableStateFlow<Resource<UpdateRoomsResponse>>(Resource.Idle)
     val updateRoomState: StateFlow<Resource<UpdateRoomsResponse>> = _updateRoomState
 
@@ -83,10 +86,26 @@ class BookingViewModel @Inject constructor(
         }
     }
 
+    fun deleteBookingRoom(bookingRoomId:Int){
+        viewModelScope.launch {
+            _deletebookingState.value=Resource.Loading
+            val result=bookingRepository.deleteBookingRoom(bookingRoomId)
+            _deletebookingState.value=result
+        }
+    }
+
     fun getKetersediaan(roomId: Int) {
         viewModelScope.launch {
             _getKetersediaanState.value = Resource.Loading
             val result = bookingRepository.getKetersediaan(roomId)
+            _getKetersediaanState.value = result  // Update the state with the fetched data
+        }
+    }
+
+    fun getKetersediaanBooking(roomId: Int) {
+        viewModelScope.launch {
+            _getKetersediaanState.value = Resource.Loading
+            val result = bookingRepository.getKetersediaanBooking(roomId)
             _getKetersediaanState.value = result  // Update the state with the fetched data
         }
     }

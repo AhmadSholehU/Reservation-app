@@ -56,6 +56,24 @@ fun convertDate2(inputDate: String): String? {
     }
 }
 
+fun reverseConvertDate(inputDate: String): String? {
+    return try {
+        // Format input date string: "Kamis, 26 Des 24" (bahasa Indonesia)
+        val inputFormat = SimpleDateFormat("EEEE, dd MMM yy", Locale("id", "ID"))
+        inputFormat.timeZone = TimeZone.getTimeZone("UTC") // Timezone tetap konsisten
+
+        // Parse input string ke dalam Date object
+        val date = inputFormat.parse(inputDate)
+
+        // Format ke output ISO: "yyyy-MM-dd"
+        val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
+        outputFormat.format(date)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
 fun formatCurrency(value: Int): String {
     val formatter = NumberFormat.getNumberInstance(Locale("in", "ID"))
     return formatter.format(value)

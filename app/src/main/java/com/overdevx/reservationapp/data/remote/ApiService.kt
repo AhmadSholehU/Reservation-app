@@ -18,6 +18,7 @@ import com.overdevx.reservationapp.data.model.UpdateRoomsRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -60,6 +61,11 @@ interface ApiService {
         @Body updateRoomsRequest: UpdateBookingRequest
     ): Response<BookingRoomResponse>
 
+    @DELETE("booking-rooms/{id}")
+    suspend fun  deleteBooking(
+        @Path("id") bookingRoomId: Int,
+    ): Response<BookingRoomResponse>
+
     @GET("booking-rooms/room/{id}")
     suspend fun getBookingRoom(@Path("id") roomId: Int): BookingRoomResponse
 
@@ -71,6 +77,9 @@ interface ApiService {
 
     @GET("booking-rooms/cektanggal/{id}")
     suspend fun getKetersediaan(@Path("id") roomId: Int): KetersediaanResponse
+
+    @GET("booking-rooms/tanggalbr/{id}")
+    suspend fun getKetersediaanBooking(@Path("id") roomId: Int): KetersediaanResponse
 
     @GET("booking-rooms")
     suspend fun getBookinglist(

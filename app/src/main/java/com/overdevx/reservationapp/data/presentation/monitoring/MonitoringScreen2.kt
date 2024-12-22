@@ -39,6 +39,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Monitoring
+import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
@@ -56,6 +58,7 @@ import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
+import com.overdevx.reservationapp.utils.AutoResizedText
 import com.overdevx.reservationapp.utils.Resource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -264,19 +267,23 @@ private fun ItemSection(
                 .padding(10.dp)
                 .align(Alignment.BottomStart), verticalArrangement = Arrangement.Bottom
         ) {
-            Text(
+            AutoResizedText(
                 text = "$buildingName",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 24.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.nonScaledSp,
+                ),
                 modifier = Modifier
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
+            AutoResizedText(
                 text = "Status Ruang :",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 12.nonScaledSp,
+                ),
                 modifier = Modifier
             )
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -288,11 +295,13 @@ private fun ItemSection(
                         .align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(
+                AutoResizedText(
                     text = "$availble Tersedia",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 14.sp,
                     color = white,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 10.nonScaledSp,
+                    ),
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -304,11 +313,13 @@ private fun ItemSection(
                         .align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(
+                AutoResizedText(
                     text = "$notAvailble Tidak Tersedia",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 14.sp,
                     color = white,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 10.nonScaledSp,
+                    ),
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -320,11 +331,13 @@ private fun ItemSection(
                         .align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(
+                AutoResizedText(
                     text = "$booked Booked",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 14.sp,
                     color = white,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 10.nonScaledSp,
+                    ),
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
@@ -341,12 +354,13 @@ private fun ItemSection(
                     .height(45.dp)
                     .fillMaxWidth()
             ) {
-                Text(
+                AutoResizedText(
                     text = "Lihat Ketersediaan Kamar",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 16.sp,
                     color = white,
-                    textAlign = TextAlign.Center,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 12.nonScaledSp,
+                    ),
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
@@ -406,19 +420,23 @@ private fun ItemSection2(
                 .padding(10.dp)
                 .align(Alignment.BottomStart), verticalArrangement = Arrangement.Bottom
         ) {
-            Text(
+            AutoResizedText(
                 text = "$roomName",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                fontSize = 24.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.nonScaledSp,
+                ),
                 modifier = Modifier
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
+            AutoResizedText(
                 text = "Status Ruang :",
-                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                fontSize = 16.sp,
                 color = white,
+                style = TextStyle(
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 12.nonScaledSp,
+                ),
                 modifier = Modifier
             )
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -430,11 +448,13 @@ private fun ItemSection2(
                         .align(Alignment.CenterVertically)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(
+                AutoResizedText(
                     text = "$statusRoom",
-                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                    fontSize = 14.sp,
                     color = white,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 10.nonScaledSp,
+                    ),
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
 
@@ -443,99 +463,5 @@ private fun ItemSection2(
         }
 
     }
-//    Column(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(200.dp)
-//            .clip(RoundedCornerShape(16.dp))
-//    ) {
-//        Column {
-//            Text(
-//                text = "Title room",
-//                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                fontSize = 24.sp,
-//                color = white,
-//                textAlign = TextAlign.Center,
-//                modifier = Modifier.align(Alignment.CenterHorizontally)
-//            )
-//            Text(
-//                text = "Status Ruang :",
-//                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                fontSize = 20.sp,
-//                color = white,
-//                textAlign = TextAlign.Center,
-//                modifier = Modifier.align(Alignment.CenterHorizontally)
-//            )
-//            Row(modifier = Modifier.fillMaxWidth()) {
-//                Box(
-//                    modifier = Modifier
-//                        .size(10.dp)
-//                        .clip(CircleShape)
-//                        .background(primary)
-//                        .align(Alignment.CenterVertically)
-//                )
-//                Spacer(modifier = Modifier.width(5.dp))
-//                Text(
-//                    text = "32 Tersedia",
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                    fontSize = 14.sp,
-//                    color = white,
-//                    modifier = Modifier.align(Alignment.CenterVertically)
-//                )
-//
-//                Box(
-//                    modifier = Modifier
-//                        .size(10.dp)
-//                        .clip(CircleShape)
-//                        .background(primary)
-//                        .align(Alignment.CenterVertically)
-//                )
-//                Spacer(modifier = Modifier.width(5.dp))
-//                Text(
-//                    text = "32 Tersedia",
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                    fontSize = 14.sp,
-//                    color = white,
-//                    modifier = Modifier.align(Alignment.CenterVertically)
-//                )
-//
-//                Box(
-//                    modifier = Modifier
-//                        .size(10.dp)
-//                        .clip(CircleShape)
-//                        .background(primary)
-//                        .align(Alignment.CenterVertically)
-//                )
-//                Spacer(modifier = Modifier.width(5.dp))
-//                Text(
-//                    text = "32 Tersedia",
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                    fontSize = 14.sp,
-//                    color = white,
-//                    modifier = Modifier.align(Alignment.CenterVertically)
-//                )
-//            }
-//        }
-//        Button(
-//            onClick = {
-//
-//            },
-//            shape = RoundedCornerShape(16.dp),
-//            colors = ButtonDefaults.buttonColors(
-//                containerColor = primary,
-//            ),
-//            modifier = Modifier.align(Alignment.CenterHorizontally)
-//        ) {
-//
-//            Text(
-//                text = "LIHAT KETERSEDIAAN KAMAR",
-//                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                fontSize = 20.sp,
-//                color = white,
-//                textAlign = TextAlign.Center,
-//                modifier = Modifier.align(Alignment.CenterVertically)
-//            )
-//
-//        }
-//    }
+
 }

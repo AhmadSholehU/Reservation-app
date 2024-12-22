@@ -14,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -97,7 +98,9 @@ import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
 import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialog
 import com.overdevx.reservationapp.ui.theme.gray
+import com.overdevx.reservationapp.ui.theme.gray4
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
@@ -131,6 +134,7 @@ fun AdminRoomScreen(
     var showDialog by remember { mutableStateOf(false) }
     var showLoadingDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
 
     var days_change by remember { mutableStateOf(0) }
     var room_id by remember { mutableStateOf(0) }
@@ -256,7 +260,21 @@ fun AdminRoomScreen(
             }
 
             is Resource.ErrorMessage -> {
-                Text("Error: ${(bookingState as Resource.ErrorMessage).message}")
+                showLoadingDialog = false
+                showErrorDialog=true
+                if(showErrorDialog){
+                    ErrorDialog(
+                        title = "Gagal",
+                        desc = "Gagal Upload Data,Error: ${(bookingState as Resource.ErrorMessage).message}",
+                        onDismiss = {
+                            showErrorDialog=false
+                        },
+                        onClick = {
+                            showErrorDialog=false
+                            viewModelBooking.resetBookingState()
+                        }
+                    )
+                }
             }
 
             else -> {}
@@ -592,63 +610,122 @@ private fun RoomSection(
                         if (groupedAvailableRooms.isEmpty()) {
                             EmptyItem()
                         } else {
-                            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                groupedAvailableRooms.forEach { (floor, rooms) ->
-                                    // Header untuk setiap lantai
-                                    item {
-                                        // Header untuk setiap lantai
-                                        AutoResizedText(
-                                            text = floor,
-                                            color = secondary,
-                                            style = TextStyle(
-                                                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-                                                fontSize = 12.nonScaledSp,
-                                            ),
-                                            modifier = Modifier.padding(vertical = 5.dp)
-                                        )
-                                    }
-
-                                    // Grid untuk setiap room pada lantai tersebut
-                                    itemsIndexed(rooms.chunked(3)) {index, rowRooms ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            rowRooms.forEach { room ->
-                                                val isSelected = selectedRoomIds.contains(room.room_id)
-                                                RoomAdminItem(
-                                                    modifier = Modifier
-                                                        .padding(5.dp)
-                                                        .then(
-                                                            if (rooms.size % 3 != 0 ) {
-                                                                Modifier // Tidak menggunakan weight
-                                                            } else {
-                                                                Modifier.weight(1f)
-                                                            },
-                                                        ),
-                                                    room = room,
-                                                    isSelected = isSelected,
-                                                    onRoomClicked = { roomId, roomNumber ->
-                                                        val updatedRoomIds =
-                                                            if (selectedRoomIds.contains(roomId)) {
-                                                                selectedRoomIds - roomId
-                                                            } else {
-                                                                selectedRoomIds + roomId
-                                                            }
-                                                        val updatedRoomNumbers =
-                                                            if (selectedRoomNumber.contains(roomNumber)) {
-                                                                selectedRoomNumber - roomNumber
-                                                            } else {
-                                                                selectedRoomNumber + roomNumber
-                                                            }
-                                                        onRoomsSelected(updatedRoomIds, updatedRoomNumbers)
-                                                    }
+                            BoxWithConstraints {
+                                if (maxWidth < 360.dp) {
+                                    LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                        groupedAvailableRooms.forEach { (floor, rooms) ->
+                                            // Header untuk setiap lantai
+                                            item {
+                                                // Header untuk setiap lantai
+                                                AutoResizedText(
+                                                    text = floor,
+                                                    color = secondary,
+                                                    style = TextStyle(
+                                                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                                                        fontSize = 12.nonScaledSp,
+                                                    ),
+                                                    modifier = Modifier.padding(vertical = 5.dp)
                                                 )
+                                            }
+
+                                            // Grid untuk setiap room pada lantai tersebut
+                                            itemsIndexed(rooms.chunked(2)) {index, rowRooms ->
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    rowRooms.forEach { room ->
+                                                        val isSelected = selectedRoomIds.contains(room.room_id)
+                                                        RoomAdminItem(
+                                                            modifier = Modifier
+                                                                .padding(5.dp)
+                                                                .weight(1f),
+                                                            room = room,
+                                                            isSelected = isSelected,
+                                                            onRoomClicked = { roomId, roomNumber ->
+                                                                val updatedRoomIds =
+                                                                    if (selectedRoomIds.contains(roomId)) {
+                                                                        selectedRoomIds - roomId
+                                                                    } else {
+                                                                        selectedRoomIds + roomId
+                                                                    }
+                                                                val updatedRoomNumbers =
+                                                                    if (selectedRoomNumber.contains(roomNumber)) {
+                                                                        selectedRoomNumber - roomNumber
+                                                                    } else {
+                                                                        selectedRoomNumber + roomNumber
+                                                                    }
+                                                                onRoomsSelected(updatedRoomIds, updatedRoomNumbers)
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                        groupedAvailableRooms.forEach { (floor, rooms) ->
+                                            // Header untuk setiap lantai
+                                            item {
+                                                // Header untuk setiap lantai
+                                                AutoResizedText(
+                                                    text = floor,
+                                                    color = secondary,
+                                                    style = TextStyle(
+                                                        fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
+                                                        fontSize = 12.nonScaledSp,
+                                                    ),
+                                                    modifier = Modifier.padding(vertical = 5.dp)
+                                                )
+                                            }
+
+                                            // Grid untuk setiap room pada lantai tersebut
+                                            itemsIndexed(rooms.chunked(3)) {index, rowRooms ->
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    rowRooms.forEach { room ->
+                                                        val isSelected = selectedRoomIds.contains(room.room_id)
+                                                        RoomAdminItem(
+                                                            modifier = Modifier
+                                                                .padding(5.dp)
+                                                                .then(
+                                                                    if (rooms.size % 3 != 0 ) {
+                                                                        Modifier // Tidak menggunakan weight
+                                                                    } else {
+                                                                        Modifier.weight(1f)
+                                                                    },
+                                                                ),
+                                                            room = room,
+                                                            isSelected = isSelected,
+                                                            onRoomClicked = { roomId, roomNumber ->
+                                                                val updatedRoomIds =
+                                                                    if (selectedRoomIds.contains(roomId)) {
+                                                                        selectedRoomIds - roomId
+                                                                    } else {
+                                                                        selectedRoomIds + roomId
+                                                                    }
+                                                                val updatedRoomNumbers =
+                                                                    if (selectedRoomNumber.contains(roomNumber)) {
+                                                                        selectedRoomNumber - roomNumber
+                                                                    } else {
+                                                                        selectedRoomNumber + roomNumber
+                                                                    }
+                                                                onRoomsSelected(updatedRoomIds, updatedRoomNumbers)
+                                                            }
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+
                         }
                     }
                 }
@@ -1045,6 +1122,71 @@ fun SuccessDialog(
     )
 }
 
+@Composable
+fun DeleteDialog(
+    onDismiss: () -> Unit,
+    onClick: () -> Unit,
+    text: String = "Yakin ingin menghapus item ini ?",
+    modifier: Modifier = Modifier
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = {
+            Column(Modifier.fillMaxWidth()) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_success),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .align(Alignment.CenterHorizontally)
+
+                )
+            }
+        },
+        text = {
+            Column(Modifier.fillMaxWidth()) {
+                Text(
+                    text = text,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = secondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        },
+        confirmButton = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        onClick()
+                        onDismiss()
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = secondary,
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .width(200.dp)
+                ) {
+                    Text(
+                        text = "Yakin",
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 16.sp,
+                        color = white,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                    )
+                }
+
+            }
+
+        },
+        containerColor = white,
+        shape = RoundedCornerShape(10.dp)
+    )
+}
 
 @Composable
 fun StatusButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
@@ -1303,6 +1445,77 @@ fun LoadingShimmerEffect() {
 }
 
 @Composable
+fun LoadingShimmerEffect2() {
+    fun Modifier.shimmerEffect(): Modifier = composed {
+        val colors = listOf(
+            Color.LightGray.copy(alpha = 0.3f),
+            Color.LightGray.copy(alpha = 0.2f),
+            Color.LightGray.copy(alpha = 0.3f),
+        )
+        val transition = rememberInfiniteTransition(label = "shimmer")
+        val shimmerAnimation = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec = infiniteRepeatable(animation = tween(1000, easing = LinearEasing)),
+            label = "shimmer"
+        )
+        background(
+            Brush.linearGradient(
+                colors = colors,
+                start = Offset.Zero,
+                end = Offset(x = shimmerAnimation.value, y = shimmerAnimation.value * 2)
+            )
+        )
+    }
+    LazyColumn(modifier = Modifier.height(500.dp)) {
+        items(8) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .background(gray4)
+                    .clip(RoundedCornerShape(10.dp))
+
+            ) {
+                Row(Modifier.padding(10.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(height = 80.dp, width = 80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .shimmerEffect()
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .shimmerEffect()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun LoadingShimmerEffectPesanDialog() {
     fun Modifier.shimmerEffect(): Modifier = composed {
         val colors = listOf(
@@ -1495,7 +1708,7 @@ fun DatePickerWithDateSelectableDatesSample(
                 onClick = {
                     // Hitung rentang hari yang dipilih
                     val selectedStart = datePickerState.selectedStartDateMillis
-                    val selectedEnd = datePickerState.selectedEndDateMillis
+                    val selectedEnd = datePickerState.selectedEndDateMillis ?: selectedStart
                     if (selectedStart != null && selectedEnd != null) {
                         val daysDifference = (selectedEnd - selectedStart) / (24 * 60 * 60 * 1000)
                         if (daysDifference > 2) {

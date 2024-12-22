@@ -99,6 +99,7 @@ fun BookingListScreenDetail(
     var showLoadingDialog by remember { mutableStateOf(false) }
     val unselectableDates = remember { mutableStateListOf<Long>() }
     var showSuccessDialog by remember { mutableStateOf(true) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val ketersediaanState by bookingViewModel.getKetersediaanState.collectAsStateWithLifecycle()
     val updateBookingState by bookingViewModel.updatatebookingState.collectAsStateWithLifecycle()
     val deleteBookingState by bookingViewModel.deletebookingState.collectAsStateWithLifecycle()
@@ -108,6 +109,7 @@ fun BookingListScreenDetail(
     }
 
     val bookingListbyIdState by bookingViewModel.getBookingListbyIdState.collectAsStateWithLifecycle()
+    var jumlahKamar by remember { mutableStateOf(0) }
     Column(modifier = Modifier.padding(10.dp)) {
         TopBarSection(onNavigateBack = { onNavigateBack() })
         when(bookingListbyIdState){
@@ -121,7 +123,7 @@ fun BookingListScreenDetail(
 
             }
             Resource.Loading -> {
-
+                LoadingShimmerEffect()
             }
             is Resource.Success -> {
                 val bookingList = (bookingListbyIdState as Resource.Success<BookingListResponse>).data?.data
@@ -139,6 +141,7 @@ fun BookingListScreenDetail(
                 }else{
                     BookingItem2(
                         booking = bookingList[0],
+                        jumlahKamar = jumlahKamar,
                     )
                     Spacer(modifier = Modifier.height(5.dp))
                     ListRoom(
@@ -150,13 +153,26 @@ fun BookingListScreenDetail(
                             showStatusDialog = true
                         },
                         ondeleteClick = {
-                            bookingViewModel.deleteBookingRoom(bookingRoomId)
+                            showDeleteDialog = true
 
+
+                        },
+                        onJumlahKamar = {
+                            jumlahKamar=it
                         },
                         modifier = Modifier.padding(start = 10.dp, end =10.dp))
 
                 }
             }
+        }
+
+        if(showDeleteDialog){
+            DeleteDialog(
+                onDismiss = { showDeleteDialog = false },
+                onClick = {
+                    bookingViewModel.deleteBookingRoom(bookingRoomId)
+                }
+            )
         }
     }
     when (ketersediaanState) {
@@ -780,7 +796,8 @@ private fun BookingDateColumn(label: String, date: String, color: Color) {
 
 @Composable
 private fun BookingItem2(
-    booking: BookingList,modifier: Modifier = Modifier) {
+    booking: BookingList,jumlahKamar:Int=0,modifier: Modifier = Modifier) {
+
     TicketShapeCard {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -834,7 +851,7 @@ private fun BookingItem2(
                         modifier = Modifier
                     )
                     AutoResizedText(
-                        text = "3 Kamar",
+                        text = jumlahKamar.toString(),
                         color = secondary,
                         style = TextStyle(
                             fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
@@ -958,6 +975,7 @@ private fun ListRoom(
     bookingViewModel: BookingViewModel,
     onClick: () -> Unit,
     ondeleteClick: () -> Unit,
+    onJumlahKamar:(Int)->Unit,
     modifier: Modifier ) {
     val bookingListbyIdState by bookingViewModel.getBookingListbyIdState.collectAsStateWithLifecycle()
     Column(modifier = modifier
@@ -981,6 +999,9 @@ private fun ListRoom(
             is Resource.Success -> {
                 val roomData =
                     (bookingListbyIdState as Resource.Success<BookingListResponse>).data?.data
+
+                var jumlahdata = roomData?.size
+                onJumlahKamar(jumlahdata!!)
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(25.dp),

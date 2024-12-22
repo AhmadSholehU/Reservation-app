@@ -126,75 +126,12 @@ fun BookingListScreen(
     //val bookingRooms = bookingViewModel.bookingRooms.collectAsLazyPagingItems()
     val bookingList = bookingViewModel.bookingList.collectAsLazyPagingItems()
 
-    val coroutineScope = rememberCoroutineScope()
-    var isRefreshing by remember { mutableStateOf(false) }
-    val state = rememberPullToRefreshState()
-    val onRefresh: () -> Unit = {
-        isRefreshing = true
-        coroutineScope.launch {
-            delay(1000)
-            //bookingViewModel.getBookingList()
-            isRefreshing = false
-        }
-    }
-    LaunchedEffect(Unit) {
-        //bookingViewModel.getBookingList()
-    }
-
     Column(modifier = Modifier.padding(10.dp)) {
         val dpi = getDpi()
         TopBarSection(onNavigateBack = { onNavigateBack() })
-        PullToRefreshBox(
-            state = state,
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
+        Box(
             modifier = Modifier.background(gray4, RoundedCornerShape(10.dp))
         ) {
-//            when (bookingListState) {
-//                Resource.Loading -> {
-//                    LoadingShimmerEffect()
-//                }
-//
-//                is Resource.Success -> {
-//                    val bookingList = (bookingListState as Resource.Success<List<BookingList>>).data
-//                    if (bookingList != null) {
-//                        if (bookingList.isEmpty()) {
-//                            Text(text = "No booking available")
-//                        } else {
-//                            LazyColumn(
-//                                modifier = modifier
-//                                    .fillMaxSize()
-//                                    .padding(10.dp)
-//
-//                            ) {
-//                                items(bookingList, key = { it.booking_id }) { bookingList ->
-//                                    BookingItem(booking = bookingList, onClick = {
-//                                        selectedBooking = bookingList
-//                                        selectedStartDate = bookingList.Booking.start_date
-//                                        selectedEndDate = bookingList.Booking.end_date
-//                                        showStatusDialog = true
-//
-//                                    })
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                is Resource.Error -> {
-//
-//                }
-//
-//                is Resource.ErrorMessage -> {
-//
-//                }
-//
-//                Resource.Idle -> {
-//
-//                }
-//
-//            }
-
             LazyColumn(
                 modifier = modifier
                     .fillMaxSize()
@@ -243,12 +180,7 @@ fun BookingListScreen(
                     when {
                         loadState.refresh is LoadState.Loading -> {
                             item {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                               LoadingShimmerEffect2()
                             }
                         }
 
@@ -276,26 +208,47 @@ fun BookingListScreen(
                         }
 
                         loadState.refresh is LoadState.Error -> {
-//                            val e = loadState.refresh as LoadState.Error
-//                            item {
-//                                Column(
-//                                    modifier = Modifier
-//                                        .fillMaxWidth()
-//                                        .padding(16.dp),
-//                                    horizontalAlignment = Alignment.CenterHorizontally
-//                                ) {
-//                                    Text(
-//                                        text = "Gagal memuat data awal: ${e.error.localizedMessage}",
-//                                        color = Color.Red,
-//                                        modifier = Modifier.padding(bottom = 8.dp)
-//                                    )
-//                                    Button(
-//                                        onClick = { retry() }
-//                                    ) {
-//                                        Text("Coba Lagi")
-//                                    }
-//                                }
-//                            }
+                            val e = loadState.refresh as LoadState.Error
+                            item {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    AutoResizedText(
+                                        text = "Gagal memuat data awal: ${e.error.localizedMessage}",
+                                        color = primary,
+                                        style = TextStyle(
+                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                            fontSize = 12.nonScaledSp,
+                                        ),
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    Button(
+                                        onClick = {
+                                            retry()
+                                        },
+                                        shape = RoundedCornerShape(20.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = primary,
+                                        ),
+                                        modifier = Modifier
+                                            .width(200.dp)
+                                            .align(Alignment.CenterHorizontally)
+
+                                    ) {
+                                        Text(
+                                            text = "Muat Ulang",
+                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                            fontSize = 16.sp,
+                                            color = white,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.align(Alignment.CenterVertically)
+                                        )
+                                    }
+                                }
+                            }
 
                         }
                     }

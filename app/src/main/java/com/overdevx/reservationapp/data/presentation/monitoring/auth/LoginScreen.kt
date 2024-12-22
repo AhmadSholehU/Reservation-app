@@ -448,16 +448,20 @@ fun LoginScreen(
 
 @Composable
 fun ErrorDialog(
-  modifier: Modifier = Modifier) {
+    title: String,
+    desc:String,
+    onDismiss: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier) {
     var showDialog by remember { mutableStateOf(true) }
     AlertDialog(
         onDismissRequest = {
-
+onDismiss()
         }, // Menutup dialog saat di luar dialog ditekan
         title = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_success),
+                    painter = painterResource(id = R.drawable.ic_circle_error),
                     contentDescription = null,
                     tint = primary,
                     modifier = Modifier
@@ -470,7 +474,7 @@ fun ErrorDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Success",
+                    text = title,
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 24.sp,
                     color = white,
@@ -480,10 +484,11 @@ fun ErrorDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Your Login is successfully",
+                    text = desc,
                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                     fontSize = 16.sp,
                     color = white2,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                 )
@@ -492,6 +497,8 @@ fun ErrorDialog(
         confirmButton = {
             Button(
                 onClick = {
+                   onClick()
+                    onDismiss()
                     showDialog = false
                 },
                 modifier = Modifier

@@ -12,6 +12,7 @@ import com.overdevx.reservationapp.data.model.BookingResponse
 import com.overdevx.reservationapp.data.model.BookingRoom
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.BookingRoominit
+import com.overdevx.reservationapp.data.model.History
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.RoomDataUpdate
 import com.overdevx.reservationapp.data.model.UpdateBookingRequest
@@ -19,6 +20,7 @@ import com.overdevx.reservationapp.data.model.UpdateRoomsRequest
 import com.overdevx.reservationapp.data.model.UpdateRoomsResponse
 import com.overdevx.reservationapp.data.paging.BookingListPagingSource
 import com.overdevx.reservationapp.data.paging.BookingRoomPagingSource
+import com.overdevx.reservationapp.data.paging.HistoryListPagingSource
 import com.overdevx.reservationapp.data.remote.ApiService
 import com.overdevx.reservationapp.data.remote.ApiService2
 import com.overdevx.reservationapp.utils.Resource
@@ -216,6 +218,7 @@ class BookingRespository @Inject constructor(
             pagingSourceFactory = { BookingRoomPagingSource(authenticateApiService) }
         )
     }
+
 
 
 }

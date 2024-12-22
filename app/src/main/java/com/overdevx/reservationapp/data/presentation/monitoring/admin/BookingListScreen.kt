@@ -20,12 +20,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -33,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -125,7 +129,8 @@ fun BookingListScreen(
     val bookingListState by bookingViewModel.bookingListState.collectAsStateWithLifecycle()
     //val bookingRooms = bookingViewModel.bookingRooms.collectAsLazyPagingItems()
     val bookingList = bookingViewModel.bookingList.collectAsLazyPagingItems()
-
+    val lazyListState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     Column(modifier = Modifier.padding(10.dp)) {
         val dpi = getDpi()
         TopBarSection(onNavigateBack = { onNavigateBack() })
@@ -142,9 +147,8 @@ fun BookingListScreen(
                     bookingList?.let {
                         BoxWithConstraints {
                             if (maxWidth < 360.dp) {
-                                BookingItemSmall(
-                                    booking = it,
-                                    onClick = {
+                                BookingItem(
+                                    booking = it, onClick = {
                                         selectedBooking = it
                                         selectedStartDate = it.startDate
                                         selectedEndDate = it.endDate
@@ -182,29 +186,6 @@ fun BookingListScreen(
                             item {
                                LoadingShimmerEffect2()
                             }
-                        }
-
-                        loadState.append is LoadState.Loading -> {
-//                            item {
-//                                Column(
-//                                    modifier = Modifier
-//                                        .fillMaxWidth()
-//                                        .padding(16.dp),
-//                                    horizontalAlignment = Alignment.CenterHorizontally
-//                                ) {
-//                                    val e = loadState.append as LoadState.Error
-//                                    Text(
-//                                        text = "Gagal memuat data: ${e.error.localizedMessage}",
-//                                        color = Color.Red,
-//                                        modifier = Modifier.padding(bottom = 8.dp)
-//                                    )
-//                                    Button(
-//                                        onClick = { retry() }
-//                                    ) {
-//                                        Text("Coba Lagi")
-//                                    }
-//                                }
-//                            }
                         }
 
                         loadState.refresh is LoadState.Error -> {
@@ -251,11 +232,86 @@ fun BookingListScreen(
                             }
 
                         }
+
+                        // Tambahkan kondisi untuk footer jika terjadi kesalahan pada append (footer)
+                        loadState.append is LoadState.Error -> {
+                            val e = loadState.append as LoadState.Error
+                            item {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Gagal memuat data tambahan: ${e.error.localizedMessage}",
+                                        color = primary,
+                                        style = TextStyle(
+                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                            fontSize = 14.sp
+                                        ),
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    Button(
+                                        onClick = {
+                                            retry() // Fungsi untuk mencoba memuat ulang
+                                        },
+                                        shape = RoundedCornerShape(20.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = primary,
+                                        ),
+                                        modifier = Modifier
+                                            .width(200.dp)
+                                            .align(Alignment.CenterHorizontally)
+                                    ) {
+                                        Text(
+                                            text = "Coba Lagi",
+                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                            fontSize = 16.sp,
+                                            color = white,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        // Footer untuk menampilkan loading jika data tambahan sedang dimuat
+                        loadState.append is LoadState.Loading -> {
+                            item {
+                                CircularProgressIndicator(
+                                    color = primary,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp)
+                                        .wrapContentSize(Alignment.Center)
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-
+            // Tombol "Kembali ke Atas"
+            val isAtTop = lazyListState.firstVisibleItemIndex == 0
+            if (!isAtTop) {
+                FloatingActionButton(
+                    containerColor = secondary,
+                    onClick = {
+                        coroutineScope.launch {
+                            lazyListState.animateScrollToItem(0)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowUpward,
+                        tint = white,
+                        contentDescription = "Kembali ke atas"
+                    )
+                }
+            }
             selectedBooking?.let { booking ->
                 when (ketersediaanState) {
                     is Resource.Loading -> {
@@ -388,200 +444,7 @@ private fun TopBarSection(
 
 }
 
-//@Composable
-//private fun BookingItem(
-//    booking: BookingList,
-//    onClick: () -> Unit,
-//    modifier: Modifier = Modifier
-//) {
-//    Spacer(modifier = Modifier.height(10.dp))
-//    Row(
-//        modifier
-//            .fillMaxWidth()
-//            .height(400.dp)
-//            .clip(RoundedCornerShape(10.dp))
-//            .background(white),
-//        verticalAlignment = Alignment.Top
-//    ) {
-//        Box(
-//            modifier = Modifier
-//                .fillMaxHeight()
-//                .width(8.dp)
-//                .background(primary)
-//
-//        )
-//        Spacer(modifier = Modifier.width(10.dp))
-//        Column(
-//            modifier = Modifier
-//                .padding(5.dp)
-//                .fillMaxWidth()
-//        ) {
-//            AutoResizedText(
-//                text = "ID BOOKING : ${booking.nomor_pesanan}",
-//                color = gray2,
-//                style = TextStyle(
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                    fontSize = 10.nonScaledSp,
-//                ),
-//                modifier = Modifier
-//            )
-//            Spacer(modifier = Modifier.height(10.dp))
-//            Box(modifier = Modifier.fillMaxWidth()) {
-//                val startDate = convertDate(booking.BookingRoom.Booking.start_date)
-//                val endDate = convertDate(booking.BookingRoom.Booking.end_date)
-//                Column(modifier = Modifier.align(Alignment.TopStart)) {
-//                    AutoResizedText(
-//                        text = "Check In",
-//                        color = gray2,
-//                        style = TextStyle(
-//                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-//                            fontSize = 12.nonScaledSp,
-//                            textAlign = TextAlign.Center,
-//                        ),
-//                        modifier = Modifier
-//                    )
-//
-//                    if (startDate != null) {
-//                        AutoResizedText(
-//                            text = startDate,
-//                            color = green,
-//                            style = TextStyle(
-//                                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-//                                fontSize = 12.nonScaledSp,
-//                            ),
-//                            modifier = Modifier
-//                        )
-//                    }
-//                }
-//                Column(modifier = Modifier.align(Alignment.Center)) {
-//                    Box(
-//                        modifier = Modifier
-//                            .size(20.dp)
-//                            .clip(RoundedCornerShape(5.dp))
-//                            .background(green)
-//                    ) {
-//                        Icon(
-//                            painterResource(R.drawable.pixelarticons_check),
-//                            null,
-//                            tint = white,
-//                            modifier = Modifier
-//                                .size(10.dp)
-//                                .align(Alignment.Center)
-//                        )
-//                    }
-//                }
-//                Column(modifier = Modifier.align(Alignment.TopEnd)) {
-//                    AutoResizedText(
-//                        text = "Check Out",
-//                        color = gray2,
-//                        style = TextStyle(
-//                            fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-//                            fontSize = 12.nonScaledSp,
-//                            textAlign = TextAlign.Center
-//                        ),
-//                        modifier = Modifier.align(Alignment.End)
-//                    )
-//                    if (endDate != null) {
-//                        AutoResizedText(
-//                            text = endDate,
-//                            color = primary,
-//                            style = TextStyle(
-//                                fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
-//                                fontSize = 12.nonScaledSp,
-//                                textAlign = TextAlign.Center
-//                            ),
-//                            modifier = Modifier.align(Alignment.End)
-//                        )
-//                    }
-//                }
-//            }
-//            HorizontalDivider(thickness = 1.dp, color = primary)
-//            Spacer(modifier = Modifier.height(10.dp))
-//
-//            Spacer(modifier = Modifier.height(10.dp))
-//            AutoResizedText(
-//                text = "Ruang Terbooking ",
-//                color = secondary,
-//                style = TextStyle(
-//                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                    fontSize = 14.nonScaledSp,
-//                    textAlign = TextAlign.Center,
-//                ),
-//                modifier = Modifier
-//            )
-//            Spacer(modifier = Modifier.height(10.dp))
-//            when (bookingListbyIdState) {
-//                is Resource.Error -> {
-//
-//                }
-//                is Resource.ErrorMessage -> {
-//
-//                }
-//                Resource.Idle -> {
-//
-//                }
-//                Resource.Loading -> {
-//
-//                }
-//                is Resource.Success -> {
-//                    val roomData =
-//                        (bookingListbyIdState as Resource.Success<BookingListResponse>).data?.data
-//                    LazyRow(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                    ) {
-//                        items(roomData.orEmpty()) { room ->
-//                            RoomItem(room)
-//                        }
-//                    }
-//                }
-//            }
-//
-//            Button(
-//                onClick = {
-//                    onClick()
-//                },
-//                shape = RoundedCornerShape(8.dp),
-//                colors = ButtonDefaults.buttonColors(
-//                    containerColor = primary,
-//                ),
-//                modifier = Modifier.align(Alignment.Start)
-//            ) {
-//                Box(
-//                    modifier = Modifier
-//                        .width(85.dp)
-//                        .height(25.dp)
-//                ) {
-//                    Row(modifier = Modifier.align(Alignment.CenterStart)) {
-//                        Icon(
-//                            imageVector = Icons.Default.DateRange,
-//                            contentDescription = null,
-//                            tint = white,
-//                            modifier = Modifier
-//                                .align(Alignment.CenterVertically)
-//                                .size(20.dp)
-//                        )
-//                        AutoResizedText(
-//                            text = "Reschedule",
-//                            color = white,
-//                            style = TextStyle(
-//                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-//                                fontSize = 10.nonScaledSp,
-//                                textAlign = TextAlign.Center,
-//                            ),
-//                            modifier = Modifier.align(Alignment.CenterVertically)
-//                        )
-//                    }
-//
-//                }
-//
-//            }
-//
-//        }
-//        Spacer(modifier = Modifier.weight(1f))
-//
-//    }
-//}
+
 
 @Composable
 fun RoomItem(room: BookingList) {

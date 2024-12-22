@@ -2,6 +2,7 @@ package com.overdevx.reservationapp.data.presentation.monitoring.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.cachedIn
 import com.overdevx.reservationapp.data.model.History
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.repository.HistoryRepository
@@ -19,10 +20,8 @@ class HistoryViewModel @Inject constructor(
 ):ViewModel(){
     private val _historyState = MutableStateFlow<Resource<List<History>>>(Resource.Idle)
     val historyState: StateFlow<Resource<List<History>>> = _historyState
+    val historyList = repository.getHistoryList().flow.cachedIn(viewModelScope)
 
-    init {
-        fetchHistory()
-    }
     fun fetchHistory() {
         viewModelScope.launch {
             delay(1000)

@@ -3,7 +3,10 @@ package com.overdevx.reservationapp.data.model
 data class HistoryResponse(
     val status: String,
     val message: String,
-    val data: List<History>
+    val data: List<History>,
+    val totalItems: Int,
+    val currentPage: Int,
+    val totalPages: Int
 )
 data class History(
     val id:Int,

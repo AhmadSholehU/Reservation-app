@@ -55,6 +55,7 @@ class BookingViewModel @Inject constructor(
 
     //val bookingRooms = bookingRepository.getBookingRooms().flow.cachedIn(viewModelScope)
     val bookingList = bookingRepository.getBookingList().flow.cachedIn(viewModelScope)
+
     fun bookRoom(roomId: List<Int>, startDate: String,endDate:String) {
         viewModelScope.launch {
             _bookingState.value = Resource.Loading

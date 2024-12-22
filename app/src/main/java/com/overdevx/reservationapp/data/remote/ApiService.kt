@@ -95,5 +95,9 @@ interface ApiService {
         @Path("id") id: Int
     ): BookingListResponse
 
+    @GET("history")
+    suspend fun getHistorylist(
+        @Query("page") page: Int
+    ): HistoryResponse
 }
 

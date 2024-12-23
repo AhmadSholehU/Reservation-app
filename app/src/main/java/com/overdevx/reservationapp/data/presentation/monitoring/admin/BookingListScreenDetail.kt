@@ -89,6 +89,7 @@ import java.util.TimeZone
 fun BookingListScreenDetail(
     bookingViewModel: BookingViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
+    onNavigateBack2: () -> Unit,
     bookingRoomId:Int,
     modifier: Modifier = Modifier) {
     var selectedBooking by remember { mutableStateOf<List<BookingList?>?>(null) }
@@ -310,6 +311,7 @@ fun BookingListScreenDetail(
                     onClick = {
                         bookingViewModel.resetUpdateBookingState()
                         bookingViewModel.getBookingListbyId(bookingRoomId)
+                        onNavigateBack2()
                     })
             }
         }
@@ -350,7 +352,7 @@ private fun TopBarSection(
         Spacer(modifier = modifier.width(10.dp))
 
         Text(
-            text = "Daftar Ruang \n Terbooking",
+            text = "Detail Ruang \n Terbooking",
             fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
             fontSize = 20.sp,
             color = secondary,

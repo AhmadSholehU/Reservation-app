@@ -2,6 +2,7 @@ package com.overdevx.reservationapp.data.presentation.monitoring.history
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,7 @@ import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShi
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect2
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.gray3
+import com.overdevx.reservationapp.ui.theme.gray4
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
@@ -146,25 +148,44 @@ fun HistoryScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(gray3)
+                    .background(gray4)
                     .padding(10.dp)
 
             ) {
-
-                items(historyList) { booking ->
-                    BoxWithConstraints {
-                        if (maxWidth < 320.dp) {
-                            if (booking != null) {
-                                BookingItem(booking)
-                            }
-                        } else {
-                            if (booking != null) {
-                                BookingItem(booking)
+                if (historyList.itemCount == 0 && historyList.loadState.refresh is LoadState.NotLoading) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Tidak ada data yang tersedia",
+                                style = TextStyle(
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontSize = 16.sp,
+                                    color = secondary
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    items(historyList) { booking ->
+                        if (booking != null) {
+                            BoxWithConstraints {
+                                if (maxWidth < 320.dp) {
+                                    BookingItemSmall(booking)
+                                } else {
+                                    BookingItem(booking)
+                                }
                             }
                         }
                     }
-
                 }
+
 
 
 

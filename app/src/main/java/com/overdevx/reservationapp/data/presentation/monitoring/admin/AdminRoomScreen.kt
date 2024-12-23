@@ -337,13 +337,13 @@ fun AdminRoomScreen(
 
         when (ketersediaanState) {
             is Resource.Loading -> {
-                // Show loading indicator if necessary
+
+
             }
 
             is Resource.Success -> {
                 val ketersediaanDate =
                     (ketersediaanState as Resource.Success<KetersediaanResponse>).data?.data
-                unselectableDates.clear()
 
                 if (ketersediaanDate != null) {
                     ketersediaanDate.forEach { ketersediaan ->
@@ -372,8 +372,17 @@ fun AdminRoomScreen(
                                 current.add(Calendar.DATE, 1) // Increment 1 hari
                             }
                         }
+
+                        Log.d("LISTDATE", unselectableDates.toString())
                     }
 
+                } else {
+                    // Tambahkan logika default jika `ketersediaanDate` null
+                    val defaultCalendar = Calendar.getInstance()
+                    defaultCalendar.add(Calendar.DATE, 0) // Contoh: Tambahkan tanggal 7 hari dari sekarang
+
+                    unselectableDates.add(defaultCalendar.timeInMillis)
+                    Log.d("UNSELECTABLE_DATES", "Default date added: ${defaultCalendar.time}")
                 }
 
                 //Log.d("DATE", unselectableDates.toString())

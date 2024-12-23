@@ -166,7 +166,7 @@ class MainActivity : ComponentActivity() {
                             sharedTransitionScope = this@SharedTransitionLayout,
                             modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
                         )
-                        showBottomBar=true
+                        showBottomBar = true
                     }
                     composable<ControlRoute> {
                         HomeScreen(
@@ -203,7 +203,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate(LoginRoute)
                                 },
                                 onUserClick = {
-                                  navController.navigate(HomeRoute)
+                                    navController.navigate(HomeRoute)
                                 },
                                 modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
                             )
@@ -222,7 +222,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate(ControlRoute)
                                 },
                                 onMenu2Click = {
-                                    navController.navigate(BookingListRoute)
+                                    navController.navigate(BookingListRoute(false))
                                 },
                                 onMenu3Click = {
                                     navController.navigate(HistoryRoute)
@@ -341,13 +341,16 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable<BookingListRoute> {
+                        val args = it.toRoute<BookingListRoute>()
+                        val shouldRefresh = args.shouldRefresh
                         BookingListScreen(
                             modifier = Modifier
                                 .padding(bottom = innerPadding.calculateBottomPadding()),
                             onNavigateBack = { navController.navigateUp() },
                             onClick = { bookingId ->
                                 navController.navigate(DetailBookingListRoute(bookingId))
-                            }
+                            },
+                            shouldRefresh = shouldRefresh
                         )
                     }
                     composable<DetailBookingListRoute> {
@@ -355,6 +358,11 @@ class MainActivity : ComponentActivity() {
                         val bookingId = args.bookingId
                         BookingListScreenDetail(
                             onNavigateBack = { navController.navigateUp() },
+                            onNavigateBack2 = {
+                                navController.navigate(BookingListRoute(true)) {
+                                    popUpTo(BookingListRoute(false)) { inclusive = true }
+                                }
+                            },
                             bookingRoomId = bookingId
                         )
                     }
@@ -499,7 +507,9 @@ data class DetailBookingListRoute(
 )
 
 @Serializable
-data object BookingListRoute
+data class BookingListRoute(
+    val shouldRefresh: Boolean
+)
 
 @Serializable
 sealed class BottomScreens<T>(

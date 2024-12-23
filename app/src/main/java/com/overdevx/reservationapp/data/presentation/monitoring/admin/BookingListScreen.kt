@@ -109,6 +109,7 @@ fun BookingListScreen(
     bookingViewModel: BookingViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onClick: (Int) -> Unit,
+    shouldRefresh: Boolean,
     modifier: Modifier = Modifier
 ) {
     val unselectableDates = remember { mutableStateListOf<Long>() }
@@ -131,6 +132,10 @@ fun BookingListScreen(
     val bookingList = bookingViewModel.bookingList.collectAsLazyPagingItems()
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    if (shouldRefresh) {
+        // Panggil ulang fungsi ViewModel untuk me-refresh data
+        bookingList.refresh()
+    }
     Column(modifier = Modifier.padding(10.dp)) {
         val dpi = getDpi()
         TopBarSection(onNavigateBack = { onNavigateBack() })
@@ -138,46 +143,69 @@ fun BookingListScreen(
             modifier = Modifier.background(gray4, RoundedCornerShape(10.dp))
         ) {
             LazyColumn(
+                state = lazyListState,
                 modifier = modifier
                     .fillMaxSize()
                     .padding(10.dp)
 
             ) {
-                items(bookingList) { bookingList ->
-                    bookingList?.let {
-                        BoxWithConstraints {
-                            if (maxWidth < 360.dp) {
-                                BookingItem(
-                                    booking = it, onClick = {
-                                        selectedBooking = it
-                                        selectedStartDate = it.startDate
-                                        selectedEndDate = it.endDate
-                                        showStatusDialog = true
-
-                                    },
-                                    onItemClick = {
-                                        onClick(it.bookingRoomId)
-                                    },
-                                    modifier = Modifier.padding(top = 10.dp)
-                                )
-                            } else {
-                                BookingItem(
-                                    booking = it, onClick = {
-                                        selectedBooking = it
-                                        selectedStartDate = it.startDate
-                                        selectedEndDate = it.endDate
-                                        showStatusDialog = true
-
-                                    },
-                                    onItemClick = {
-                                        onClick(it.bookingRoomId)
-                                    },
-                                    modifier = Modifier.padding(top = 10.dp)
-                                )
-                            }
+                if (bookingList.itemCount == 0 && bookingList.loadState.refresh is LoadState.NotLoading) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Tidak ada data yang tersedia",
+                                style = TextStyle(
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontSize = 16.sp,
+                                    color = secondary
+                                ),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
+                } else {
+                    items(bookingList) { bookingList ->
+                        bookingList?.let {
+                            BoxWithConstraints {
+                                if (maxWidth < 360.dp) {
+                                    BookingItem(
+                                        booking = it, onClick = {
+                                            selectedBooking = it
+                                            selectedStartDate = it.startDate
+                                            selectedEndDate = it.endDate
+                                            showStatusDialog = true
 
+                                        },
+                                        onItemClick = {
+                                            onClick(it.bookingRoomId)
+                                        },
+                                        modifier = Modifier.padding(top = 10.dp)
+                                    )
+                                } else {
+                                    BookingItem(
+                                        booking = it, onClick = {
+                                            selectedBooking = it
+                                            selectedStartDate = it.startDate
+                                            selectedEndDate = it.endDate
+                                            showStatusDialog = true
+
+                                        },
+                                        onItemClick = {
+                                            onClick(it.bookingRoomId)
+                                        },
+                                        modifier = Modifier.padding(top = 10.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                    }
                 }
                 // Indikator loading
                 bookingList.apply {

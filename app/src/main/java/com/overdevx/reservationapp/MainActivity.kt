@@ -192,6 +192,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onNavigateBack = {
                                 navController.navigateUp()
+                            },
+                            onNavigateToLogin = {
+                                navController.navigate(LoginRoute)
                             }
                         )
                     }
@@ -347,6 +350,9 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .padding(bottom = innerPadding.calculateBottomPadding()),
                             onNavigateBack = { navController.navigateUp() },
+                            onNavigateToLogin = {
+                                navController.navigate(LoginRoute)
+                            },
                             onClick = { bookingId ->
                                 navController.navigate(DetailBookingListRoute(bookingId))
                             },
@@ -363,6 +369,7 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(BookingListRoute(false)) { inclusive = true }
                                 }
                             },
+
                             bookingRoomId = bookingId
                         )
                     }

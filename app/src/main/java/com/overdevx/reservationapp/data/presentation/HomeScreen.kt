@@ -68,10 +68,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Building
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingViewModel
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingDialog
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
 import com.overdevx.reservationapp.data.presentation.monitoring.auth.AuthViewModel
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialog
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialogUnauthorized
 import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.red2
@@ -88,9 +92,14 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onClick: (Int, String) -> Unit,
     onNavigateBack: () -> Unit,
-    viewModel: BuildingViewModel = hiltViewModel()
+    onNavigateToLogin: () -> Unit,
+    viewModel: BuildingViewModel = hiltViewModel(),
+    bookingViewModel: BookingViewModel = hiltViewModel(),
 ) {
     val buildingState by viewModel.buildingState.collectAsStateWithLifecycle()
+    val checkTokenState by bookingViewModel.checkTokenState.collectAsStateWithLifecycle()
+    var showLoadingDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     val state = rememberPullToRefreshState()
@@ -101,6 +110,9 @@ fun HomeScreen(
             viewModel.fetchBuilding()
             isRefreshing = false
         }
+    }
+    LaunchedEffect(Unit) {
+        bookingViewModel.checkToken()
     }
     val buildingImages = mapOf(
         1 to R.drawable.img_a, // building_id to image resource
@@ -206,9 +218,49 @@ fun HomeScreen(
                     else -> {}
 
                 }
-            }
-        }
+                when (checkTokenState) {
+                    is Resource.Loading -> {
+                        showLoadingDialog = true
+                    }
 
+                    is Resource.Success -> {
+                        showLoadingDialog=false
+                    }
+
+
+                    is Resource.ErrorMessage -> {
+                        showLoadingDialog = false
+                        showErrorDialog=true
+
+                    }
+
+                    else -> {}
+                }
+
+                if (showLoadingDialog) {
+                    LoadingDialog(onDismissRequest = {
+
+                    })
+                }
+            }
+
+
+        }
+        if(showErrorDialog){
+            ErrorDialogUnauthorized(
+                title = "Gagal",
+                desc = "Gagal Inisialisasi Data,Error: ${(checkTokenState as Resource.ErrorMessage).message}",
+                onDismissRequest = {
+                    showErrorDialog=false
+                    bookingViewModel.resetCheckTokenState()
+                },
+                onClick = {
+                    showErrorDialog=false
+                    onNavigateToLogin()
+                    bookingViewModel.resetCheckTokenState()
+                }
+            )
+        }
     }
 
 

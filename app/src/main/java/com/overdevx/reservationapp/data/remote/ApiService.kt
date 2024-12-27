@@ -99,5 +99,10 @@ interface ApiService {
     suspend fun getHistorylist(
         @Query("page") page: Int
     ): HistoryResponse
+
+    @GET("history")
+    suspend fun searchHistorylist(
+        @Query("searchTerm") searchterm: String
+    ): HistoryResponse
 }
 

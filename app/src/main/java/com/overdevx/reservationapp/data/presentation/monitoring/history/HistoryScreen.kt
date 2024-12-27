@@ -2,10 +2,12 @@ package com.overdevx.reservationapp.data.presentation.monitoring.history
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,21 +20,32 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -42,12 +55,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -89,6 +106,7 @@ fun HistoryScreen(
 ) {
 
     val historyState by historyViewModel.historyState.collectAsStateWithLifecycle()
+    val searchQuery by historyViewModel.searchQuery.collectAsState()
     val historyList = historyViewModel.historyList.collectAsLazyPagingItems()
 
     val lazyListState = rememberLazyListState()
@@ -103,6 +121,10 @@ fun HistoryScreen(
             isRefreshing = false
         }
     }
+    var text by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+
     Column(
         modifier = modifier
             .padding(16.dp)
@@ -134,197 +156,264 @@ fun HistoryScreen(
             )
         }
 
-
-        Spacer(modifier = Modifier.height(10.dp))
-        // Transform LazyPagingItems to grouped data
-        val groupedData = historyList.itemSnapshotList.items
-            .groupBy { formatDate(it.changed_at) } // Group by formatted date
-            .mapValues { entry ->
-                entry.value.sortedBy { it.id } // Sort by ID within each group
-            }
-        Box(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(gray4)
-                    .padding(10.dp)
-
-            ) {
-                if (historyList.itemCount == 0 && historyList.loadState.refresh is LoadState.NotLoading) {
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .semantics { isTraversalGroup = true }) {
+            DockedSearchBar(
+                modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp)
+                    .semantics {
+                        traversalIndex = 0f
+                    },
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        query = searchQuery,
+                        onQueryChange = { historyViewModel.updateSearchQuery(it) },
+                        onSearch = {
+                            expanded = false
+                                   },
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                        placeholder = {
                             Text(
-                                text = "Tidak ada data yang tersedia",
+                                text = "Cari riwayat pesanan...",
                                 style = TextStyle(
-                                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                    fontFamily = FontFamily(listOf(Font(R.font.inter_medium))),
                                     fontSize = 16.sp,
-                                    color = secondary
+                                    color = gray
                                 ),
                                 textAlign = TextAlign.Center
                             )
-                        }
-                    }
-                } else {
-                    items(historyList) { booking ->
-                        if (booking != null) {
-                            BoxWithConstraints {
-                                if (maxWidth < 320.dp) {
-                                    BookingItemSmall(booking)
-                                } else {
-                                    BookingItem(booking)
+                                      },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        modifier = Modifier.background(white)
+                    )
+                },
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                colors = SearchBarDefaults.colors(
+                    containerColor = white,
+                    dividerColor = gray,
+                )
+            ) {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    repeat(4) { idx ->
+                        val resultText = "A10$idx"
+                        ListItem(
+                            headlineContent = { Text(resultText) },
+                            supportingContent = { Text("Nomor Ruang") },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier =
+                            Modifier
+                                .clickable {
+                                    historyViewModel.updateSearchQuery(resultText)
+                                    text = resultText
+                                    expanded = false
                                 }
-                            }
-                        }
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
                     }
                 }
+            }
 
+            Spacer(modifier = Modifier.height(10.dp))
+            // Transform LazyPagingItems to grouped data
+            val groupedData = historyList.itemSnapshotList.items
+                .groupBy { formatDate(it.changed_at) } // Group by formatted date
+                .mapValues { entry ->
+                    entry.value.sortedBy { it.id } // Sort by ID within each group
+                }
+            Box(modifier = Modifier.semantics { traversalIndex = 1f }) {
+                LazyColumn(
+                    contentPadding = PaddingValues(top=72.dp),
+                    state = lazyListState,
+                    modifier = Modifier
+                        .semantics { traversalIndex = 1f }
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(gray4)
+                        .padding(10.dp)
 
-
-
-                historyList.apply {
-                    when {
-                        loadState.refresh is LoadState.Loading -> {
-                            item {
-                                LoadingShimmerEffect2()
-                            }
-                        }
-
-                        loadState.refresh is LoadState.Error -> {
-                            val e = loadState.refresh as LoadState.Error
-                            item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    AutoResizedText(
-                                        text = "Gagal memuat data awal: ${e.error.localizedMessage}",
-                                        color = primary,
-                                        style = TextStyle(
-                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                            fontSize = 12.nonScaledSp,
-                                        ),
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    )
-                                    Button(
-                                        onClick = {
-                                            retry()
-                                        },
-                                        shape = RoundedCornerShape(20.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = primary,
-                                        ),
-                                        modifier = Modifier
-                                            .width(200.dp)
-                                            .align(Alignment.CenterHorizontally)
-
-                                    ) {
-                                        Text(
-                                            text = "Muat Ulang",
-                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                            fontSize = 16.sp,
-                                            color = white,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.align(Alignment.CenterVertically)
-                                        )
-                                    }
-                                }
-                            }
-
-                        }
-
-                        // Tambahkan kondisi untuk footer jika terjadi kesalahan pada append (footer)
-                        loadState.append is LoadState.Error -> {
-                            val e = loadState.append as LoadState.Error
-                            item {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "Gagal memuat data tambahan: ${e.error.localizedMessage}",
-                                        color = primary,
-                                        style = TextStyle(
-                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                            fontSize = 14.sp
-                                        ),
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    )
-                                    Button(
-                                        onClick = {
-                                            retry() // Fungsi untuk mencoba memuat ulang
-                                        },
-                                        shape = RoundedCornerShape(20.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = primary,
-                                        ),
-                                        modifier = Modifier
-                                            .width(200.dp)
-                                            .align(Alignment.CenterHorizontally)
-                                    ) {
-                                        Text(
-                                            text = "Coba Lagi",
-                                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                                            fontSize = 16.sp,
-                                            color = white,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        // Footer untuk menampilkan loading jika data tambahan sedang dimuat
-                        loadState.append is LoadState.Loading -> {
-                            item {
-                                CircularProgressIndicator(
-                                    color = primary,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 16.dp)
-                                        .wrapContentSize(Alignment.Center)
+                ) {
+                    if (historyList.itemCount == 0 && historyList.loadState.refresh is LoadState.NotLoading) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Tidak ada data yang tersedia",
+                                    style = TextStyle(
+                                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                        fontSize = 16.sp,
+                                        color = secondary
+                                    ),
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
+                    } else {
+                        items(historyList) { booking ->
+                            if (booking != null) {
+                                BoxWithConstraints {
+                                    if (maxWidth < 320.dp) {
+                                        BookingItemSmall(booking)
+                                    } else {
+                                        BookingItem(booking)
+                                    }
+                                }
+                            }
+                        }
+                    }
 
+
+
+
+                    historyList.apply {
+                        when {
+                            loadState.refresh is LoadState.Loading -> {
+                                item {
+                                    LoadingShimmerEffect2()
+                                }
+                            }
+
+                            loadState.refresh is LoadState.Error -> {
+                                val e = loadState.refresh as LoadState.Error
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        AutoResizedText(
+                                            text = "Gagal memuat data awal: ${e.error.localizedMessage}",
+                                            color = primary,
+                                            style = TextStyle(
+                                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                                fontSize = 12.nonScaledSp,
+                                            ),
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        Button(
+                                            onClick = {
+                                                retry()
+                                            },
+                                            shape = RoundedCornerShape(20.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = primary,
+                                            ),
+                                            modifier = Modifier
+                                                .width(200.dp)
+                                                .align(Alignment.CenterHorizontally)
+
+                                        ) {
+                                            Text(
+                                                text = "Muat Ulang",
+                                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                                fontSize = 16.sp,
+                                                color = white,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.align(Alignment.CenterVertically)
+                                            )
+                                        }
+                                    }
+                                }
+
+                            }
+
+                            // Tambahkan kondisi untuk footer jika terjadi kesalahan pada append (footer)
+                            loadState.append is LoadState.Error -> {
+                                val e = loadState.append as LoadState.Error
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Gagal memuat data tambahan: ${e.error.localizedMessage}",
+                                            color = primary,
+                                            style = TextStyle(
+                                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                                fontSize = 14.sp
+                                            ),
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        Button(
+                                            onClick = {
+                                                retry() // Fungsi untuk mencoba memuat ulang
+                                            },
+                                            shape = RoundedCornerShape(20.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = primary,
+                                            ),
+                                            modifier = Modifier
+                                                .width(200.dp)
+                                                .align(Alignment.CenterHorizontally)
+                                        ) {
+                                            Text(
+                                                text = "Coba Lagi",
+                                                fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                                                fontSize = 16.sp,
+                                                color = white,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            // Footer untuk menampilkan loading jika data tambahan sedang dimuat
+                            loadState.append is LoadState.Loading -> {
+                                item {
+                                    CircularProgressIndicator(
+                                        color = primary,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp)
+                                            .wrapContentSize(Alignment.Center)
+                                    )
+                                }
+                            }
+
+                        }
+                    }
+
+
+                }
+                // Tombol "Kembali ke Atas"
+                val isAtTop = lazyListState.firstVisibleItemIndex == 0
+                if (!isAtTop) {
+                    FloatingActionButton(
+                        containerColor = secondary,
+                        onClick = {
+                            coroutineScope.launch {
+                                lazyListState.animateScrollToItem(0)
+                            }
+                        },
+                        modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowUpward,
+                            tint = white,
+                            contentDescription = "Kembali ke atas"
+                        )
                     }
                 }
-
-
             }
 
-            // Tombol "Kembali ke Atas"
-            val isAtTop = lazyListState.firstVisibleItemIndex == 0
-            if (!isAtTop) {
-                FloatingActionButton(
-                    containerColor = secondary,
-                    onClick = {
-                        coroutineScope.launch {
-                            lazyListState.animateScrollToItem(0)
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowUpward,
-                        tint = white,
-                        contentDescription = "Kembali ke atas"
-                    )
-                }
-            }
         }
+
+
     }
 
 

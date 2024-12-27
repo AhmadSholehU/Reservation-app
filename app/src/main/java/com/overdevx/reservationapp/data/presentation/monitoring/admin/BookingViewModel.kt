@@ -41,6 +41,10 @@ class BookingViewModel @Inject constructor(
     private val _updateRoomState = MutableStateFlow<Resource<UpdateRoomsResponse>>(Resource.Idle)
     val updateRoomState: StateFlow<Resource<UpdateRoomsResponse>> = _updateRoomState
 
+    private val _checkTokenState = MutableStateFlow<Resource<UpdateRoomsResponse>>(Resource.Idle)
+    val checkTokenState: StateFlow<Resource<UpdateRoomsResponse>> = _checkTokenState
+
+
     private val _getBookingRoomState = MutableStateFlow<Resource<BookingRoomResponse>>(Resource.Idle)
     val getBookingState: StateFlow<Resource<BookingRoomResponse>> = _getBookingRoomState
 
@@ -143,6 +147,18 @@ class BookingViewModel @Inject constructor(
 
     fun resetKetersediaanState() {
         _getKetersediaanState.value = Resource.Idle
+    }
+
+    fun checkToken(){
+        viewModelScope.launch {
+            _checkTokenState.value=Resource.Loading
+            val result = bookingRepository.updateRoomStatus(listOf(5),1)
+            _checkTokenState.value=result
+        }
+    }
+
+    fun resetCheckTokenState() {
+        _checkTokenState.value = Resource.Idle
     }
 
 }

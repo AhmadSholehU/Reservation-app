@@ -67,6 +67,7 @@ import com.overdevx.reservationapp.data.model.BookingList
 import com.overdevx.reservationapp.data.model.BookingListResponse
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialog
 import com.overdevx.reservationapp.ui.theme.background2
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.gray2
@@ -100,10 +101,12 @@ fun BookingListScreenDetail(
     var showLoadingDialog by remember { mutableStateOf(false) }
     val unselectableDates = remember { mutableStateListOf<Long>() }
     var showSuccessDialog by remember { mutableStateOf(true) }
+    var showErrorDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val ketersediaanState by bookingViewModel.getKetersediaanState.collectAsStateWithLifecycle()
     val updateBookingState by bookingViewModel.updatatebookingState.collectAsStateWithLifecycle()
     val deleteBookingState by bookingViewModel.deletebookingState.collectAsStateWithLifecycle()
+
     LaunchedEffect(bookingRoomId) {
         bookingViewModel.getKetersediaanBooking(bookingRoomId)
         bookingViewModel.getBookingListbyId(bookingRoomId)
@@ -269,9 +272,10 @@ fun BookingListScreenDetail(
             }
         }
     }
+
     when (updateBookingState) {
         is Resource.Loading -> {
-            Loading()
+            LoadingDialog() {  }
         }
 
         is Resource.Success -> {
@@ -291,7 +295,21 @@ fun BookingListScreenDetail(
         }
 
         is Resource.ErrorMessage -> {
-            // Handle specific error messages
+            showLoadingDialog = false
+            showErrorDialog=true
+            if(showErrorDialog){
+                ErrorDialog(
+                    title = "Gagal",
+                    desc = "Gagal Upload Data,Error: ${(updateBookingState as Resource.ErrorMessage).message}",
+                    onDismiss = {
+                        showErrorDialog=false
+                    },
+                    onClick = {
+                        showErrorDialog=false
+                        bookingViewModel.resetUpdateBookingState()
+                    }
+                )
+            }
         }
 
         is Resource.Idle -> {
@@ -321,7 +339,21 @@ fun BookingListScreenDetail(
         }
 
         is Resource.ErrorMessage -> {
-            // Handle specific error messages
+            showLoadingDialog = false
+            showErrorDialog=true
+            if(showErrorDialog){
+                ErrorDialog(
+                    title = "Gagal",
+                    desc = "Gagal Hapus Data,Error: ${(deleteBookingState as Resource.ErrorMessage).message}",
+                    onDismiss = {
+                        showErrorDialog=false
+                    },
+                    onClick = {
+                        showErrorDialog=false
+                        bookingViewModel.resetUpdateBookingState()
+                    }
+                )
+            }
         }
 
         is Resource.Idle -> {

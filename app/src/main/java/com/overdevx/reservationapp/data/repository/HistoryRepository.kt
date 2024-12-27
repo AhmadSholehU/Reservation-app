@@ -6,6 +6,7 @@ import androidx.paging.PagingConfig
 import com.overdevx.reservationapp.data.model.History
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.paging.HistoryListPagingSource
+import com.overdevx.reservationapp.data.paging.SearchHistoryPagingSource
 import com.overdevx.reservationapp.data.remote.ApiService
 import com.overdevx.reservationapp.utils.Resource
 import javax.inject.Inject
@@ -46,6 +47,13 @@ class HistoryRepository @Inject constructor(
                 enablePlaceholders = false
             ),
             pagingSourceFactory = { HistoryListPagingSource(apiService) }
+        )
+    }
+
+    fun searchHistoryPaging(searchTerm: String): Pager<Int, History> {
+        return Pager(
+            config = PagingConfig(pageSize = 10),
+            pagingSourceFactory = { SearchHistoryPagingSource(apiService, searchTerm) }
         )
     }
 }

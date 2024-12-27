@@ -63,6 +63,7 @@ import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.BookingRoomResponse
 import com.overdevx.reservationapp.data.model.Room
 import com.overdevx.reservationapp.data.presentation.RoomsViewModel
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialog
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
@@ -87,6 +88,7 @@ fun AdminRoomScreenC(
     var showDialog by remember { mutableStateOf(false) }
     var showLoadingDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
 
     var days_change by remember { mutableStateOf(0) }
     var room_id by remember { mutableStateOf(0) }
@@ -196,7 +198,21 @@ fun AdminRoomScreenC(
                 }
             }
             is Resource.ErrorMessage -> {
-                Text("Error: ${(bookingState as Resource.ErrorMessage).message}")
+                showLoadingDialog = false
+                showErrorDialog=true
+                if(showErrorDialog){
+                    ErrorDialog(
+                        title = "Gagal",
+                        desc = "Gagal Upload Data,Error: ${(bookingState as Resource.ErrorMessage).message}",
+                        onDismiss = {
+                            showErrorDialog=false
+                        },
+                        onClick = {
+                            showErrorDialog=false
+                            viewModelBooking.resetBookingState()
+                        }
+                    )
+                }
             }
             else -> {}
         }
@@ -222,7 +238,21 @@ fun AdminRoomScreenC(
             }
 
             is Resource.ErrorMessage -> {
-                Text("Error: ${(updateRoomState as Resource.ErrorMessage).message}")
+                showLoadingDialog = false
+                showErrorDialog=true
+                if(showErrorDialog){
+                    ErrorDialog(
+                        title = "Gagal",
+                        desc = "Gagal Upload Data,Error: ${(updateRoomState as Resource.ErrorMessage).message}",
+                        onDismiss = {
+                            showErrorDialog=false
+                        },
+                        onClick = {
+                            showErrorDialog=false
+                            viewModelBooking.resetUpdateState()
+                        }
+                    )
+                }
             }
 
             else -> {}

@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.presentation.BuildingViewModel
 import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
@@ -67,6 +69,7 @@ fun HomeControlScreen(
     onMenu2Click: () -> Unit,
     onMenu3Click: () -> Unit,
 ) {
+
     Box(modifier = modifier.fillMaxSize()){
         Image(
             painter = painterResource(id = R.drawable.img_line),
@@ -185,7 +188,7 @@ private fun HeaderSection(
                 AlertDialog(
                     onDismissRequest = {
 
-                    }, // Menutup dialog saat di luar dialog ditekan
+                    },
                     title = {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Icon(
@@ -214,7 +217,7 @@ private fun HeaderSection(
                             Spacer(modifier = Modifier.height(8.dp))
                             AutoResizedText(
                                 text = "Are you sure you want to log out?",
-                                color = white2,
+                                color = primary,
                                 style = TextStyle(
                                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                                     fontSize = 12.nonScaledSp,
@@ -264,7 +267,7 @@ private fun HeaderSection(
                         ) {
                             AutoResizedText(
                                 text = "Yes, log me out",
-                                color = white,
+                                color = primary,
                                 style = TextStyle(
                                     fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
                                     fontSize = 16.nonScaledSp,
@@ -274,7 +277,7 @@ private fun HeaderSection(
                         }
 
                     },
-                    containerColor = secondary
+                    containerColor = white
                 )
             }
 

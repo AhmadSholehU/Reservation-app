@@ -81,6 +81,7 @@ import com.overdevx.reservationapp.data.model.BookingRoominit
 import com.overdevx.reservationapp.data.model.KetersediaanResponse
 import com.overdevx.reservationapp.data.model.RoomDataList
 import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialogUnauthorized
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.gray2
 import com.overdevx.reservationapp.ui.theme.gray3
@@ -108,6 +109,7 @@ import java.util.TimeZone
 fun BookingListScreen(
     bookingViewModel: BookingViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     onClick: (Int) -> Unit,
     shouldRefresh: Boolean,
     modifier: Modifier = Modifier
@@ -116,10 +118,11 @@ fun BookingListScreen(
     val ketersediaanState by bookingViewModel.getKetersediaanState.collectAsStateWithLifecycle()
     val updateBookingState by bookingViewModel.updatatebookingState.collectAsStateWithLifecycle()
     var showDialog by remember { mutableStateOf(false) }
-
+    val checkTokenState by bookingViewModel.checkTokenState.collectAsStateWithLifecycle()
 
     var showSuccessDialog by remember { mutableStateOf(false) }
-
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var showLoadingDialog by remember { mutableStateOf(false) }
     var selectedBooking by remember { mutableStateOf<BookingRoominit?>(null) }
     var showStatusDialog by remember { mutableStateOf(false) }
 
@@ -135,6 +138,9 @@ fun BookingListScreen(
     if (shouldRefresh) {
         // Panggil ulang fungsi ViewModel untuk me-refresh data
         bookingList.refresh()
+    }
+    LaunchedEffect(Unit) {
+        bookingViewModel.checkToken()
     }
     Column(modifier = Modifier.padding(10.dp)) {
         val dpi = getDpi()
@@ -431,7 +437,40 @@ fun BookingListScreen(
                     // Do nothing, idle state
                 }
             }
+            when (checkTokenState) {
+                is Resource.Loading -> {
+                    showLoadingDialog = true
+                }
 
+                is Resource.Success -> {
+                    showLoadingDialog=false
+                }
+
+
+                is Resource.ErrorMessage -> {
+                    showLoadingDialog = false
+                    showErrorDialog=true
+
+                }
+
+                else -> {}
+            }
+
+            if(showErrorDialog){
+                ErrorDialogUnauthorized(
+                    title = "Gagal",
+                    desc = "Gagal Inisialisasi Data,Error: ${(checkTokenState as Resource.ErrorMessage).message}",
+                    onDismissRequest = {
+                        showErrorDialog=false
+                        bookingViewModel.resetCheckTokenState()
+                    },
+                    onClick = {
+                        showErrorDialog=false
+                        onNavigateToLogin()
+                        bookingViewModel.resetCheckTokenState()
+                    }
+                )
+            }
         }
     }
 }

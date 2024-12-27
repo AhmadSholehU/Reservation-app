@@ -152,6 +152,7 @@ fun AdminRoomScreen(
     val bookingRoomState by viewModelBooking.getBookingState.collectAsStateWithLifecycle()
     val updateBookingRoomState by viewModelBooking.updatatebookingState.collectAsStateWithLifecycle()
     val ketersediaanState by viewModelBooking.getKetersediaanState.collectAsStateWithLifecycle()
+    val checkTokenState by viewModelBooking.checkTokenState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -303,7 +304,21 @@ fun AdminRoomScreen(
 
 
             is Resource.ErrorMessage -> {
-                Text("Error: ${(updateRoomState as Resource.ErrorMessage).message}")
+                showLoadingDialog = false
+                showErrorDialog=true
+                if(showErrorDialog){
+                    ErrorDialog(
+                        title = "Gagal",
+                        desc = "Gagal Upload Data,Error: ${(updateRoomState as Resource.ErrorMessage).message}",
+                        onDismiss = {
+                            showErrorDialog=false
+                        },
+                        onClick = {
+                            showErrorDialog=false
+                            viewModelBooking.resetUpdateState()
+                        }
+                    )
+                }
             }
 
             else -> {}

@@ -519,3 +519,77 @@ onDismiss()
         containerColor = secondary
     )
 }
+
+@Composable
+fun ErrorDialogUnauthorized(
+    title: String,
+    desc:String,
+    onDismissRequest: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier) {
+    var showDialog by remember { mutableStateOf(true) }
+    AlertDialog(
+        onDismissRequest = {
+            onDismissRequest()
+        }, // Menutup dialog saat di luar dialog ditekan
+        title = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_circle_error),
+                    contentDescription = null,
+                    tint = primary,
+                    modifier = Modifier
+                        .size(55.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = title,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 24.sp,
+                    color = white,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = desc,
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 16.sp,
+                    color = white2,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onClick()
+                    onDismissRequest()
+                    showDialog = false
+                },
+                modifier = Modifier
+                    .height(55.dp)
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(primary),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "Login Kembali",
+                    fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                    fontSize = 20.sp,
+                    color = white,
+                )
+            }
+
+        },
+        containerColor = secondary
+    )
+}

@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,9 +51,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.reservationapp.R
 import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingViewModel
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.ErrorItem
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.Loading
+import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingDialog
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.LoadingShimmerEffect
+import com.overdevx.reservationapp.data.presentation.monitoring.auth.ErrorDialog
 import com.overdevx.reservationapp.ui.theme.gray
 import com.overdevx.reservationapp.ui.theme.green
 import com.overdevx.reservationapp.ui.theme.primary
@@ -68,6 +72,7 @@ import kotlinx.coroutines.launch
 fun MonitoringScreen2(
     modifier: Modifier = Modifier,
     viewModel: MonitoringViewModel = hiltViewModel(),
+
     onClick: (Int) -> Unit,
 ) {
     val roomState by viewModel.monitoringState.collectAsStateWithLifecycle()

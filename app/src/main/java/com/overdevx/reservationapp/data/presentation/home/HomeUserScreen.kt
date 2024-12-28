@@ -2,7 +2,9 @@ package com.overdevx.reservationapp.data.presentation.home
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -88,6 +90,7 @@ import com.overdevx.reservationapp.ui.theme.primary
 import com.overdevx.reservationapp.ui.theme.secondary
 import com.overdevx.reservationapp.ui.theme.white
 import com.overdevx.reservationapp.ui.theme.yellow
+import com.overdevx.reservationapp.ui.theme.yellow2
 import com.overdevx.reservationapp.utils.AutoResizedText
 import com.overdevx.reservationapp.utils.ChangeBaseUrlScreen
 import com.overdevx.reservationapp.utils.Resource
@@ -247,46 +250,12 @@ private fun HeaderSection(
                 textAlign = TextAlign.Center
             ),
             modifier = Modifier.align(Alignment.CenterHorizontally)
+                .clickable { onClick() }
         )
         Spacer(modifier = Modifier.height(10.dp))
+        OpenGoogleMapsButton(modifier = Modifier.align(Alignment.CenterHorizontally),
+            address ="Balai Diklat Kota Semarang")
 
-        Button(
-            onClick = {
-                onClick()
-            },
-            shape = RoundedCornerShape(25.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = primary,
-            ),
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(130.dp)
-                    .height(30.dp)
-            ) {
-                Row(modifier = Modifier.align(Alignment.Center)) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = white,
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
-                    AutoResizedText(
-                        text = "Dapatkan Lokasi",
-                        color = white,
-                        style = TextStyle(
-                            fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
-                            fontSize = 12.nonScaledSp,
-                            textAlign = TextAlign.Center
-                        ),
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
-                }
-
-            }
-
-        }
         Spacer(modifier = Modifier.height(16.dp))
         AutoResizedText(
             text = "Daftar Ruang",
@@ -335,7 +304,7 @@ private fun Item(
     Row(modifier = Modifier
         .fillMaxWidth()
         .padding(5.dp)
-        .shadow(elevation = 3.dp, shape = RoundedCornerShape(16.dp))
+        .shadow(elevation = 5.dp, shape = RoundedCornerShape(16.dp))
         .background(white)
         .clickable { onClick() }) {
 
@@ -371,7 +340,10 @@ private fun Item(
                 AutoResizedText(
                     text = "$roomName",
                     color = secondary,
-                    style = TextStyle(fontFamily =FontFamily(listOf(Font(R.font.inter_semibold))), fontSize = 14.nonScaledSp ),
+                    style = TextStyle(
+                        fontFamily =FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 14.nonScaledSp,
+                        color = secondary),
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 // var rating by remember { mutableDoubleStateOf(3.5) }
@@ -379,7 +351,7 @@ private fun Item(
                     modifier = Modifier
                         .size(20.dp),
                     rating = rating,
-                    starsColor = yellow
+                    starsColor = yellow2
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -472,5 +444,52 @@ fun ChangeBaseUrlDialog(
             }
         }
     )
+}
+
+@Composable
+fun OpenGoogleMapsButton(modifier: Modifier,address: String) {
+    val context = LocalContext.current
+
+    Button(
+        onClick = {
+            val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(address)}")
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            if (mapIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(mapIntent)
+            }
+        },
+        shape = RoundedCornerShape(25.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = primary,
+        ),
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .width(130.dp)
+                .height(30.dp)
+        ) {
+            Row(modifier = Modifier.align(Alignment.Center)) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = white,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+                AutoResizedText(
+                    text = "Dapatkan Lokasi",
+                    color = white,
+                    style = TextStyle(
+                        fontFamily = FontFamily(listOf(Font(R.font.inter_semibold))),
+                        fontSize = 12.nonScaledSp,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            }
+
+        }
+    }
 }
 

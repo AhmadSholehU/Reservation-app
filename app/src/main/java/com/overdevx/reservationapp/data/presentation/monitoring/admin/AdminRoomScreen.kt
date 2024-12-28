@@ -119,7 +119,7 @@ import java.util.TimeZone
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun AdminRoomScreen(
-    modifier: Modifier = Modifier,
+    modifier: Modifier=Modifier,
     buildingId: Int,
     buildingName: String,
     onNavigateBack: () -> Unit,
@@ -168,7 +168,7 @@ fun AdminRoomScreen(
         }
     }
     Column(
-        modifier = modifier.padding(16.dp)
+        modifier = modifier.padding(top=16.dp, start = 16.dp, end = 16.dp)
     ) {
         TopBarSection(onNavigateBack = { onNavigateBack() }, buildingName)
         Spacer(modifier = Modifier.height(10.dp))
@@ -785,6 +785,7 @@ private fun RoomSection(
                 }
             }
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
 
     }
@@ -885,6 +886,7 @@ fun ButtonSection(
             }
         }
     }
+
 }
 
 
@@ -1157,9 +1159,10 @@ fun DeleteDialog(
         onDismissRequest = { onDismiss() },
         title = {
             Column(Modifier.fillMaxWidth()) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_success),
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_question),
                     contentDescription = null,
+                    tint = primary,
                     modifier = Modifier
                         .size(100.dp)
                         .align(Alignment.CenterHorizontally)

@@ -14,7 +14,7 @@ class SearchHistoryPagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, History> {
         return try {
             val page = params.key ?: 1
-            val response = api.searchHistorylist(searchTerm)
+            val response = api.searchHistorylist(searchTerm,page)
             LoadResult.Page(
                 data = response.data,
                 prevKey = if (page == 1) null else page - 1,
@@ -25,5 +25,10 @@ class SearchHistoryPagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, History>): Int? = null
+    override fun getRefreshKey(state: PagingState<Int, History>): Int? {
+        return state.anchorPosition?.let { position ->
+            val closestPage = state.closestPageToPosition(position)
+            closestPage?.prevKey?.plus(1) ?: closestPage?.nextKey?.minus(1)
+        }
+    }
 }

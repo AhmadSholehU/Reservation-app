@@ -74,6 +74,9 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.overdevx.reservationapp.data.presentation.SplashScreen
@@ -81,6 +84,7 @@ import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreenDetail
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.HomeControlScreen
+import com.overdevx.reservationapp.ui.theme.primary
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -127,10 +131,42 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                     navController = navController,
                     startDestination = startDestination,
-                    enterTransition = { slideInHorizontally { it } },
-                    exitTransition = { slideOutHorizontally { -it } },
-                    popEnterTransition = { slideInHorizontally { -it } },
-                    popExitTransition = { slideOutHorizontally { it } }
+                    enterTransition = {
+                        slideInHorizontally(
+                            initialOffsetX = { it },
+                            animationSpec = tween(
+                                durationMillis = 300, // Durasi transisi
+                                easing = FastOutSlowInEasing // Easing untuk transisi halus
+                            )
+                        )
+                    },
+                    exitTransition = {
+                        slideOutHorizontally(
+                            targetOffsetX = { -it },
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            )
+                        )
+                    },
+                    popEnterTransition = {
+                        slideInHorizontally(
+                            initialOffsetX = { -it },
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            )
+                        )
+                    },
+                    popExitTransition = {
+                        slideOutHorizontally(
+                            targetOffsetX = { it },
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            )
+                        )
+                    }
                 ) {
                     composable<LoginRoute> {
                         LoginScreen(
@@ -141,7 +177,7 @@ class MainActivity : ComponentActivity() {
                             },
                             navController = navController,
                             modifier = Modifier
-                                .padding(bottom = innerPadding.calculateBottomPadding())
+
                         )
                         showBottomBar = false
                     }
@@ -429,13 +465,19 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     icon = {
-                        val icon =
-                            painterResource(id = if (isSelected) screen.selectedIconResId else screen.unselectedIconResId)
+                        val icon = painterResource(id = if (isSelected) screen.selectedIconResId else screen.unselectedIconResId)
                         val tint = if (isSelected) white else white2
                         Icon(
                             painter = icon,
                             contentDescription = screen.name,
-                            tint = tint
+                            tint = tint,
+                            modifier = Modifier
+                                .then(if (isSelected) Modifier
+
+                                    .background(color = primary, shape = CircleShape)
+                                    .padding(5.dp)
+                                else Modifier)
+
                         )
                     },
                     label = {

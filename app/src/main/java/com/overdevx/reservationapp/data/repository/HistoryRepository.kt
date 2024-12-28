@@ -52,7 +52,7 @@ class HistoryRepository @Inject constructor(
 
     fun searchHistoryPaging(searchTerm: String): Pager<Int, History> {
         return Pager(
-            config = PagingConfig(pageSize = 10),
+            config = PagingConfig(pageSize = 5),
             pagingSourceFactory = { SearchHistoryPagingSource(apiService, searchTerm) }
         )
     }

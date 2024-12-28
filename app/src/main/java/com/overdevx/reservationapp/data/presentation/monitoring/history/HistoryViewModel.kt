@@ -9,6 +9,7 @@ import com.overdevx.reservationapp.data.model.Monitoring
 import com.overdevx.reservationapp.data.repository.HistoryRepository
 import com.overdevx.reservationapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,6 +29,7 @@ class HistoryViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val historyList = _searchQuery.flatMapLatest { query ->
         if (query.isEmpty()) {
             repository.getHistoryList().flow.cachedIn(viewModelScope)

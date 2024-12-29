@@ -79,12 +79,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import com.overdevx.reservationapp.data.presentation.SplashScreen
 import com.overdevx.reservationapp.data.presentation.home.nonScaledSp
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreen
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.BookingListScreenDetail
 import com.overdevx.reservationapp.data.presentation.monitoring.admin.HomeControlScreen
 import com.overdevx.reservationapp.ui.theme.primary
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -93,7 +97,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen().setKeepOnScreenCondition { false }
+        var keepSplashScreen = true
+        installSplashScreen().setKeepOnScreenCondition { keepSplashScreen}
+        lifecycleScope.launch {
+            delay(3000)
+            keepSplashScreen = false
+        }
         enableEdgeToEdge()
         setContent {
             ReservationAppTheme {

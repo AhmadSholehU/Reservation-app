@@ -317,10 +317,9 @@ fun LoginScreen(
                     }, // Menutup dialog saat di luar dialog ditekan
                     title = {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            Icon(
+                            Image(
                                 painter = painterResource(id = R.drawable.ic_success),
                                 contentDescription = null,
-                                tint = primary,
                                 modifier = Modifier
                                     .size(55.dp)
                                     .align(Alignment.CenterHorizontally)
